@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Profile Summary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+            margin: 30px;
+        }
+        .header, .footer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        td {
+            padding: 6px;
+            vertical-align: top;
+        }
+        .label {
+            font-weight: bold;
+            width: 30%;
+        }
+        .summary-box {
+            border: 1px solid #ccc;
+            padding: 12px;
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Profile Summary</h1>
+        <p>Your Matrimony Company</p>
+        <p>info@example.com | +91-9999999999</p>
+    </div>
+
+    <div class="section">
+        <h2>Basic Details</h2>
+        <table>
+            <tr><td class="label">Name</td><td>{{ profile.full_name }}</td></tr>
+            <tr><td class="label">DOB</td><td>{{ profile.date_of_birth }}</td></tr>
+            <tr><td class="label">Marital Status</td><td>{{ profile.marital_status }}</td></tr>
+            <tr><td class="label">Height</td><td>{{ profile.height }}</td></tr>
+            <tr><td class="label">Star</td><td>{{ profile.star }}</td></tr>
+            <tr><td class="label">Rasi</td><td>{{ profile.rasi }}</td></tr>
+            <tr><td class="label">Sub Caste</td><td>{{ profile.sub_caste }}</td></tr>
+            <tr><td class="label">Gothram</td><td>{{ profile.gothram }}</td></tr>
+            <tr><td class="label">Place of Birth</td><td>{{ profile.place_of_birth }}</td></tr>
+            <tr><td class="label">Time of Birth</td><td>{{ profile.time_of_birth }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Education & Career</h2>
+        <table>
+            <tr><td class="label">Schooling</td><td>{{ profile.schooling }}</td></tr>
+            <tr><td class="label">Graduation</td><td>{{ profile.graduation }}</td></tr>
+            <tr><td class="label">Masters</td><td>{{ profile.masters }}</td></tr>
+            <tr><td class="label">Designation</td><td>{{ profile.designation }}</td></tr>
+            <tr><td class="label">Company</td><td>{{ profile.company_name }}</td></tr>
+            <tr><td class="label">Salary</td><td>{{ profile.salary }}</td></tr>
+            <tr><td class="label">Experience</td><td>{{ profile.years_of_exp }}</td></tr>
+            <tr><td class="label">Job Location</td><td>{{ profile.job_location }}</td></tr>
+            <tr><td class="label">Visa Status</td><td>{{ profile.visa_status }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Family Details</h2>
+        <table>
+            <tr><td class="label">Father</td><td>{{ profile.father_name }} - {{ profile.father_occupation }}</td></tr>
+            <tr><td class="label">Mother</td><td>{{ profile.mother_name }} - {{ profile.mother_occupation }}</td></tr>
+            <tr><td class="label">Siblings</td><td>{{ profile.siblings }}</td></tr>
+            <tr><td class="label">Parents Staying</td><td>{{ profile.parents_staying }}</td></tr>
+            <tr><td class="label">Property</td><td>{{ profile.actual_property }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Partner Preferences</h2>
+        <table>
+            <tr><td class="label">Preferred Height</td><td>{{ profile.preferred_height }}</td></tr>
+            <tr><td class="label">Age Gap</td><td>{{ profile.age_gap }}</td></tr>
+            <tr><td class="label">Preferred Sub Caste</td><td>{{ profile.preferred_sub_caste }}</td></tr>
+            <tr><td class="label">Astrology</td><td>{{ profile.astrology }}</td></tr>
+            <tr><td class="label">Looking Country</td><td>{{ profile.looking_country }}</td></tr>
+            <tr><td class="label">Looking State</td><td>{{ profile.looking_state }}</td></tr>
+            <tr><td class="label">Education Preference</td><td>{{ profile.education_preference }}</td></tr>
+            <tr><td class="label">Career Preference</td><td>{{ profile.career_preferences }}</td></tr>
+            <tr><td class="label">Special Conditions</td><td>{{ profile.special_conditions }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Storytelling Summary</h2>
+        <div class="summary-box">
+            {{ profile.story_summary }}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Generated Profile ID: {{ profile.profile_id }}</p>
+    </div>
+</body>
+</html>
