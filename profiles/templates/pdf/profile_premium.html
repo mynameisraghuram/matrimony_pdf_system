@@ -2,9 +2,23 @@
 
 {% block title %}{{ profile.full_name|default:"Profile" }} - Premium Profile{% endblock %}
 
+{% block extra_styles %}
+    .profile-photo {
+        width: 80px;
+        height: 100px;
+        object-fit: cover;
+        border: 2px solid #D4A017;
+        float: right;
+        margin-left: 10px;
+    }
+{% endblock %}
+
 {% block banner %}
     <div class="profile-banner">
         <span class="tier-badge">Premium Profile</span>
+        {% if photo_uri %}
+        <img class="profile-photo" src="{{ photo_uri }}" alt="Photo">
+        {% endif %}
         <h2>{{ profile.full_name|default:"—" }}{% if profile.looking_for %} — {{ profile.looking_for }}{% endif %}</h2>
         <div class="subtitle">
             {% if profile.marital_status %}{{ profile.marital_status }}{% endif %}

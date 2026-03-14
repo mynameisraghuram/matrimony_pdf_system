@@ -4,44 +4,530 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>All Profiles <span class="badge bg-secondary">{{ profiles.count }}</span></h2>
-  <form method="POST" action="{% url 'profiles:sync_sheet' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-success"
-            onclick="this.disabled=true; this.innerText='Syncing…'; showLoading('Syncing from Google Sheet…'); this.form.submit();">
-      Sync Google Sheet
-    </button>
-  </form>
+  <h2>All Profiles <span class="badge bg-secondary">{{ page_obj.paginator.count }}</span></h2>
+  <div class="d-flex gap-2">
+    <a href="{% url 'profiles:add_profile' %}" class="btn btn-primary">+ Add Profile</a>
+    <a href="{% url 'profiles:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary">
+      Export Excel
+    </a>
+    <form method="POST" action="{% url 'profiles:sync_sheet' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success"
+              onclick="this.disabled=true; this.innerText='Syncing…'; showLoading('Syncing from Google Sheet…'); this.form.submit();">
+        Sync Google Sheet
+      </button>
+    </form>
+  </div>
 </div>
 
+<!-- Dashboard Stats -->
+<div class="row g-2 mb-3">
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-dark">{{ stats.total }}</div>
+        <small class="text-muted">Total Profiles</small>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-primary">{{ stats.grooms }}</div>
+        <small class="text-muted">Grooms</small>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-info">{{ stats.brides }}</div>
+        <small class="text-muted">Brides</small>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-success">{{ stats.with_photo }}</div>
+        <small class="text-muted">With Photo</small>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-secondary">{{ stats.total_pdfs }}</div>
+        <small class="text-muted">Total PDFs</small>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold text-warning">{{ stats.pdfs_this_week }}</div>
+        <small class="text-muted">PDFs This Week</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Charts -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body" style="height: 250px;">
+        <h6 class="card-title text-center mb-2">Bride vs Groom</h6>
+        <canvas id="chartLookingFor"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body" style="height: 250px;">
+        <h6 class="card-title text-center mb-2">By Sub Caste</h6>
+        <canvas id="chartSubCaste"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body" style="height: 250px;">
+        <h6 class="card-title text-center mb-2">By Status</h6>
+        <canvas id="chartStatus"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  const lfData = {{ chart_looking_for|safe }};
+  const scData = {{ chart_sub_caste|safe }};
+  const stData = {{ chart_status|safe }};
+
+  // Bride vs Groom — Doughnut
+  new Chart(document.getElementById('chartLookingFor'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(lfData),
+      datasets: [{
+        data: Object.values(lfData),
+        backgroundColor: ['#0d6efd', '#0dcaf0'],
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+    }
+  });
+
+  // Sub Caste — Bar
+  new Chart(document.getElementById('chartSubCaste'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(scData),
+      datasets: [{
+        label: 'Profiles',
+        data: Object.values(scData),
+        backgroundColor: '#C42027',
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  // Status — Doughnut
+  const statusColors = { 'Active': '#198754', 'Inactive': '#6c757d', 'Matched': '#ffc107', 'On Hold': '#dc3545' };
+  new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(stData),
+      datasets: [{
+        data: Object.values(stData),
+        backgroundColor: Object.keys(stData).map(k => statusColors[k] || '#adb5bd'),
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+    }
+  });
+})();
+</script>
+
+<!-- Search & Filters -->
+<form method="GET" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label mb-1 small fw-bold">Search</label>
+      <input type="text" name="q" id="liveSearchInput" class="form-control form-control-sm"
+             placeholder="Name, ID, phone, email…" value="{{ q }}" autocomplete="off">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label mb-1 small fw-bold">Looking For</label>
+      <select name="looking_for" id="filterLookingFor" class="form-select form-select-sm">
+        <option value="">All</option>
+        <option value="Bride"{% if looking_for == "Bride" %} selected{% endif %}>Bride</option>
+        <option value="Groom"{% if looking_for == "Groom" %} selected{% endif %}>Groom</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label mb-1 small fw-bold">Sub Caste</label>
+      <select name="sub_caste" id="filterSubCaste" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for sc in sub_castes %}
+          <option value="{{ sc }}"{% if sub_caste == sc %} selected{% endif %}>{{ sc }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-1">
+      <label class="form-label mb-1 small fw-bold">Marital Status</label>
+      <select name="marital_status" id="filterMaritalStatus" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for ms in marital_statuses %}
+          <option value="{{ ms }}"{% if marital_status == ms %} selected{% endif %}>{{ ms }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-1">
+      <label class="form-label mb-1 small fw-bold">Status</label>
+      <select name="status" id="filterStatus" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for val, label in status_choices %}
+          <option value="{{ val }}"{% if status == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-1">
+      <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button>
+      <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+    </div>
+  </div>
+</form>
+
 {% if profiles %}
-  <table class="table table-striped table-hover align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>Profile ID</th>
-        <th>Full Name</th>
-        <th>Contact Number</th>
-        <th>Email</th>
-        <th>Last Updated</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for profile in profiles %}
-      <tr>
-        <td>
-          <a href="{% url 'profiles:profile_detail' profile.pk %}">
-            {{ profile.display_id }}
+  <!-- Bulk Generate Form wraps the table -->
+  <form method="POST" action="{% url 'profiles:bulk_generate_pdf' %}" id="bulkForm">
+    {% csrf_token %}
+
+    <!-- Bulk action bar -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="selectAll">
+        <label class="form-check-label small" for="selectAll">Select All</label>
+        <span class="text-muted small ms-2" id="selectedCount"></span>
+      </div>
+      <div class="d-flex gap-1">
+        <button type="submit" name="tier" value="standard" class="btn btn-outline-secondary btn-sm"
+                onclick="return confirmBulk(this, 'Standard');" disabled id="btnBulkStandard">
+          Bulk Standard
+        </button>
+        <button type="submit" name="tier" value="premium" class="btn btn-primary btn-sm"
+                onclick="return confirmBulk(this, 'Premium');" disabled id="btnBulkPremium">
+          Bulk Premium
+        </button>
+      </div>
+    </div>
+
+    <div class="text-muted small mb-2" id="liveResultCount"></div>
+
+    <table class="table table-striped table-hover align-middle" id="profileTable">
+      <thead class="table-dark">
+        <tr>
+          <th style="width: 30px;"></th>
+          <th style="width: 40px;"></th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=display_id&order={% if sort == 'display_id' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Profile ID {% if sort == "display_id" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=full_name&order={% if sort == 'full_name' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Full Name {% if sort == "full_name" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=looking_for&order={% if sort == 'looking_for' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Looking For {% if sort == "looking_for" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=sub_caste&order={% if sort == 'sub_caste' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Sub Caste {% if sort == "sub_caste" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=contact_number&order={% if sort == 'contact_number' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Contact {% if sort == "contact_number" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=status&order={% if sort == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Status {% if sort == "status" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=updated_at&order={% if sort == 'updated_at' and order == 'asc' %}desc{% else %}asc{% endif %}"
+               class="text-white text-decoration-none">
+              Last Updated {% if sort == "updated_at" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+            </a>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for profile in profiles %}
+        <tr>
+          <td>
+            <input class="form-check-input profile-checkbox" type="checkbox"
+                   name="profile_ids" value="{{ profile.pk }}">
+          </td>
+          <td>
+            {% if profile.photo %}
+              <img src="{{ profile.photo.url }}" alt="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+            {% else %}
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <small class="text-muted fw-bold">{{ forloop.counter }}</small>
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'profiles:profile_detail' profile.pk %}">
+              {{ profile.display_id }}
+            </a>
+          </td>
+          <td>{{ profile.full_name|default:"—" }}</td>
+          <td>
+            {% if profile.looking_for == "Bride" %}
+              <span class="badge bg-info text-dark">Bride</span>
+            {% elif profile.looking_for == "Groom" %}
+              <span class="badge bg-primary">Groom</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ profile.sub_caste|default:"—" }}</td>
+          <td>{{ profile.contact_number|default:"—" }}</td>
+          <td>
+            {% if profile.status == "active" %}
+              <span class="badge bg-success">Active</span>
+            {% elif profile.status == "inactive" %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% elif profile.status == "matched" %}
+              <span class="badge bg-warning text-dark">Matched</span>
+            {% elif profile.status == "on_hold" %}
+              <span class="badge bg-danger">On Hold</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ profile.updated_at|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <!-- Pagination -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted">
+      Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} profiles
+    </small>
+    <ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+            &laquo; Prev
           </a>
-        </td>
-        <td>{{ profile.full_name|default:"—" }}</td>
-        <td>{{ profile.contact_number|default:"—" }}</td>
-        <td>{{ profile.email|default:"—" }}</td>
-        <td>{{ profile.updated_at|date:"d M Y, H:i" }}</td>
-      </tr>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+          <li class="page-item">
+            <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+          </li>
+        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+          <li class="page-item">
+            <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+          </li>
+        {% elif num == 2 or num == page_obj.paginator.num_pages|add:"-1" %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
       {% endfor %}
-    </tbody>
-  </table>
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+            Next &raquo;
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  <script>
+    (function() {
+      const selectAll = document.getElementById('selectAll');
+      const checkboxes = document.querySelectorAll('.profile-checkbox');
+      const btnStd = document.getElementById('btnBulkStandard');
+      const btnPrem = document.getElementById('btnBulkPremium');
+      const countLabel = document.getElementById('selectedCount');
+
+      function updateState() {
+        const checked = document.querySelectorAll('.profile-checkbox:checked').length;
+        btnStd.disabled = checked === 0;
+        btnPrem.disabled = checked === 0;
+        countLabel.textContent = checked > 0 ? `(${checked} selected)` : '';
+        selectAll.checked = checked === checkboxes.length && checkboxes.length > 0;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
+      }
+
+      selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateState();
+      });
+
+      checkboxes.forEach(cb => cb.addEventListener('change', updateState));
+    })();
+
+    function confirmBulk(btn, tierLabel) {
+      const count = document.querySelectorAll('.profile-checkbox:checked').length;
+      if (count === 0) return false;
+      if (!confirm(`Generate ${tierLabel} PDFs for ${count} profile(s)?\n\nThis may take a while for Premium PDFs.`)) return false;
+      btn.disabled = true;
+      btn.innerText = 'Generating…';
+      showLoading(`Generating ${tierLabel} PDFs for ${count} profiles…`);
+      return true;
+    }
+  </script>
+
+  <!-- Real-time character-by-character search + dropdown filters -->
+  <script>
+    (function() {
+      const input = document.getElementById('liveSearchInput');
+      const filterLF = document.getElementById('filterLookingFor');
+      const filterSC = document.getElementById('filterSubCaste');
+      const filterMS = document.getElementById('filterMaritalStatus');
+      const table = document.getElementById('profileTable');
+      const rows = table.querySelectorAll('tbody tr');
+      const countEl = document.getElementById('liveResultCount');
+      const totalRows = rows.length;
+      // Column indices: 0=checkbox, 1=photo, 2=ProfileID, 3=FullName, 4=LookingFor, 5=SubCaste, 6=Contact, 7=LastUpdated
+      const searchCols = [2, 3, 4, 5, 6];
+
+      function hasActiveFilter() {
+        return input.value.trim() !== '' || filterLF.value !== '' || filterSC.value !== '' || filterMS.value !== '';
+      }
+
+      function updateCount(visible) {
+        if (!hasActiveFilter()) {
+          countEl.textContent = '';
+        } else {
+          countEl.textContent = `Showing ${visible} of ${totalRows} results`;
+        }
+      }
+
+      function clearHighlights(el) {
+        el.querySelectorAll('mark').forEach(function(m) {
+          m.replaceWith(m.textContent);
+        });
+      }
+
+      function highlightText(cell, term) {
+        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT, null);
+        const textNodes = [];
+        while (walker.nextNode()) {
+          if (walker.currentNode.parentElement.tagName === 'INPUT') continue;
+          textNodes.push(walker.currentNode);
+        }
+        const regex = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+        textNodes.forEach(function(node) {
+          if (regex.test(node.nodeValue)) {
+            const span = document.createElement('span');
+            span.innerHTML = node.nodeValue.replace(regex, '<mark style="background:#ffe08a;padding:0 1px;border-radius:2px;">$1</mark>');
+            node.parentNode.replaceChild(span, node);
+          }
+        });
+      }
+
+      function filterRows() {
+        const term = input.value.trim().toLowerCase();
+        const lfVal = filterLF.value.toLowerCase();
+        const scVal = filterSC.value.toLowerCase();
+        const msVal = filterMS.value.toLowerCase();
+        let visible = 0;
+
+        rows.forEach(function(row) {
+          const cells = row.querySelectorAll('td');
+          // Clear previous highlights
+          searchCols.forEach(function(i) { clearHighlights(cells[i]); });
+
+          // Dropdown filters — match exact column text
+          // Col 4 = Looking For, Col 5 = Sub Caste
+          // Marital Status is not in the table, so we skip client-side for it
+          const rowLF = cells[4].textContent.trim().toLowerCase();
+          const rowSC = cells[5].textContent.trim().toLowerCase();
+
+          let dropdownMatch = true;
+          if (lfVal && rowLF.indexOf(lfVal) === -1) dropdownMatch = false;
+          if (scVal && rowSC !== scVal) dropdownMatch = false;
+
+          // Text search
+          let textMatch = true;
+          if (term !== '') {
+            textMatch = false;
+            searchCols.forEach(function(i) {
+              const text = cells[i].textContent.toLowerCase();
+              if (text.indexOf(term) !== -1) textMatch = true;
+            });
+          }
+
+          if (dropdownMatch && textMatch) {
+            row.style.display = '';
+            visible++;
+            if (term !== '') {
+              searchCols.forEach(function(i) { highlightText(cells[i], term); });
+            }
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        updateCount(visible);
+      }
+
+      input.addEventListener('input', filterRows);
+      filterLF.addEventListener('change', filterRows);
+      filterSC.addEventListener('change', filterRows);
+      filterMS.addEventListener('change', filterRows);
+
+      // Run on page load if there are pre-filled values
+      if (hasActiveFilter()) filterRows();
+    })();
+  </script>
 {% else %}
-  <div class="alert alert-info">No profiles found. Click "Sync Google Sheet" above to import profiles.</div>
+  {% if q or looking_for or sub_caste or marital_status or status %}
+    <div class="alert alert-warning">No profiles match your filters. <a href="{% url 'profiles:profile_list' %}">Clear filters</a></div>
+  {% else %}
+    <div class="alert alert-info">No profiles found. Click "Sync Google Sheet" above to import profiles.</div>
+  {% endif %}
 {% endif %}
 {% endblock %}

@@ -2,8 +2,16 @@ from django.db import models
 
 
 class Profile(models.Model):
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+        ("matched", "Matched"),
+        ("on_hold", "On Hold"),
+    ]
+
     profile_id = models.CharField(max_length=50, unique=True)
     display_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     email = models.EmailField(blank=True, null=True)
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     second_contact_number = models.CharField(max_length=20, blank=True, null=True)
@@ -62,6 +70,8 @@ class Profile(models.Model):
 
     story_summary = models.TextField(blank=True, null=True)
 
+    photo = models.ImageField(upload_to="profile_photos/", blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -93,6 +103,45 @@ class GeneratedPDF(models.Model):
 
     def __str__(self):
         return f"{self.profile.profile_id} - v{self.version} ({self.tier})"
+
+
+class ActivityLog(models.Model):
+    ACTION_CHOICES = [
+        ("pdf_generated", "PDF Generated"),
+        ("pdf_previewed", "PDF Previewed"),
+        ("pdf_downloaded", "PDF Downloaded"),
+        ("pdf_emailed", "PDF Emailed"),
+        ("photo_uploaded", "Photo Uploaded"),
+        ("photo_deleted", "Photo Deleted"),
+        ("profile_synced", "Profile Synced"),
+        ("bulk_pdf_generated", "Bulk PDF Generated"),
+    ]
+
+    profile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="activities", blank=True, null=True
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    detail = models.CharField(max_length=500, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        name = self.profile.display_id if self.profile else "System"
+        return f"{name} — {self.get_action_display()} — {self.created_at:%d %b %Y %H:%M}"
+
+
+class ProfileNote(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="notes")
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.profile.display_id} — {self.text[:50]}"
 
 
 class GenerationLog(models.Model):

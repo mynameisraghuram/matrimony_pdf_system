@@ -2,6 +2,29 @@
 
 {% block title %}{{ profile.display_id }} - Standard Profile{% endblock %}
 
+{% block extra_styles %}
+    .watermark-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+    .watermark-text {
+        position: absolute;
+        top: 40%;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 80px;
+        font-weight: bold;
+        color: #f5d5d5;
+        letter-spacing: 20px;
+        text-transform: uppercase;
+    }
+{% endblock %}
+
 {% block banner %}
     <div class="profile-banner">
         <span class="tier-badge">Standard Profile</span>
@@ -16,6 +39,7 @@
 {% endblock %}
 
 {% block content %}
+    <div class="watermark-container"><div class="watermark-text">SAMPLE</div></div>
     <!-- ═══ PERSONAL + HOROSCOPE ═══ -->
     <table class="two-col">
         <tr>

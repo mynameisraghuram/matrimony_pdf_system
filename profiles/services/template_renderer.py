@@ -66,6 +66,12 @@ def render_profile_html(profile, tier="premium"):
         "whatsapp_url": "https://wa.me/9368111222",
     }
 
+    # Add profile photo URI for PDF rendering (Premium only)
+    if tier == "premium" and profile.photo:
+        photo_path = os.path.join(settings.BASE_DIR, profile.photo.path)
+        if os.path.exists(photo_path):
+            context["photo_uri"] = "file:///" + photo_path.replace("\\", "/")
+
     if tier == "standard":
         context["age_display"] = _calculate_age_display(
             getattr(profile, "date_of_birth", None)

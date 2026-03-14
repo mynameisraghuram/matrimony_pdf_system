@@ -4,12 +4,55 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <a href="{% url 'profiles:profile_list' %}" class="text-decoration-none text-muted">&larr; All Profiles</a>
-    <h2 class="mt-1 mb-0">{{ profile.full_name|default:profile.display_id }}</h2>
-    <small class="text-muted">Profile ID: {{ profile.display_id }}</small>
+  <div class="d-flex align-items-center gap-3">
+    <!-- Profile Photo -->
+    <div class="text-center" style="min-width: 100px;">
+      {% if profile.photo %}
+        <img src="{{ profile.photo.url }}" alt="Photo"
+             class="rounded-circle border shadow-sm"
+             style="width: 90px; height: 90px; object-fit: cover;">
+      {% else %}
+        <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center"
+             style="width: 90px; height: 90px;">
+          <span class="text-muted fw-bold" style="font-size: 1.5rem;">{{ profile.pk }}</span>
+        </div>
+      {% endif %}
+      <div class="mt-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size: 0.7rem;"
+                data-bs-toggle="modal" data-bs-target="#photoModal">
+          {% if profile.photo %}Change{% else %}Upload{% endif %}
+        </button>
+      </div>
+    </div>
+    <div>
+      <a href="{% url 'profiles:profile_list' %}" class="text-decoration-none text-muted">&larr; All Profiles</a>
+      <h2 class="mt-1 mb-0">{{ profile.full_name|default:profile.display_id }}</h2>
+      <small class="text-muted">Profile ID: {{ profile.display_id }}</small>
+      {% if profile.status == "active" %}
+        <span class="badge bg-success ms-2">Active</span>
+      {% elif profile.status == "inactive" %}
+        <span class="badge bg-secondary ms-2">Inactive</span>
+      {% elif profile.status == "matched" %}
+        <span class="badge bg-warning text-dark ms-2">Matched</span>
+      {% elif profile.status == "on_hold" %}
+        <span class="badge bg-danger ms-2">On Hold</span>
+      {% endif %}
+    </div>
   </div>
   <div class="d-flex gap-2">
+    <a href="{% url 'profiles:edit_profile' profile.pk %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+    <form method="POST" action="{% url 'profiles:delete_profile' profile.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm"
+              onclick="return confirm('Delete profile {{ profile.display_id }}? This cannot be undone.');">
+        Delete
+      </button>
+    </form>
+    <a href="#" onclick="shareWhatsApp(); return false;"
+       class="btn btn-success btn-sm d-flex align-items-center gap-1" title="Share profile via WhatsApp">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.588-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.325-.336-.445-.342-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.13 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>
+      WhatsApp
+    </a>
     <form method="POST" action="{% url 'profiles:generate_pdf' profile.pk 'standard' %}">
       {% csrf_token %}
       <button type="submit" class="btn btn-outline-secondary"
@@ -24,6 +67,41 @@
         Generate Premium
       </button>
     </form>
+  </div>
+</div>
+
+<!-- Photo Upload Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Profile Photo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        {% if profile.photo %}
+          <div class="text-center mb-3">
+            <img src="{{ profile.photo.url }}" alt="Current photo" class="img-fluid rounded" style="max-height: 200px;">
+          </div>
+        {% endif %}
+        <form method="POST" action="{% url 'profiles:upload_photo' profile.pk %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-2">
+            <input type="file" name="photo" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp" required>
+            <small class="text-muted">JPG, PNG or WebP. Max recommended: 2MB.</small>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Upload Photo</button>
+        </form>
+        {% if profile.photo %}
+          <hr>
+          <form method="POST" action="{% url 'profiles:delete_photo' profile.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                    onclick="return confirm('Remove this photo?');">Remove Photo</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
@@ -125,6 +203,75 @@
 </div>
 {% endif %}
 
+<!-- Internal Notes -->
+<div class="card mb-4">
+  <div class="card-header fw-bold">Internal Notes</div>
+  <div class="card-body">
+    <form method="POST" action="{% url 'profiles:add_note' profile.pk %}" class="d-flex gap-2 mb-3">
+      {% csrf_token %}
+      <input type="text" name="note_text" class="form-control form-control-sm"
+             placeholder="Add a note (e.g., family contacted, documents pending...)" required>
+      <button type="submit" class="btn btn-primary btn-sm text-nowrap">Add Note</button>
+    </form>
+    {% if notes %}
+      {% for note in notes %}
+      <div class="d-flex justify-content-between align-items-start border-bottom py-2">
+        <div>
+          <span class="small">{{ note.text }}</span>
+          <br><small class="text-muted">{{ note.created_at|date:"d M Y, H:i" }}</small>
+        </div>
+        <form method="POST" action="{% url 'profiles:delete_note' profile.pk note.id %}" class="ms-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete note"
+                  onclick="return confirm('Delete this note?');">&times;</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted small mb-0">No notes yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Activity -->
+{% if recent_activity %}
+<div class="card mb-4">
+  <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+    Recent Activity
+    <a href="{% url 'profiles:activity_log' %}" class="small text-decoration-none">View All</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        {% for log in recent_activity %}
+        <tr>
+          <td class="text-muted small" style="width: 150px;">{{ log.created_at|date:"d M Y, H:i" }}</td>
+          <td>
+            {% if log.action == "pdf_generated" %}
+              <span class="badge bg-success">PDF Generated</span>
+            {% elif log.action == "pdf_previewed" %}
+              <span class="badge bg-info text-dark">Previewed</span>
+            {% elif log.action == "pdf_downloaded" %}
+              <span class="badge bg-primary">Downloaded</span>
+            {% elif log.action == "pdf_emailed" %}
+              <span class="badge bg-warning text-dark">Emailed</span>
+            {% elif log.action == "photo_uploaded" %}
+              <span class="badge bg-secondary">Photo Uploaded</span>
+            {% elif log.action == "photo_deleted" %}
+              <span class="badge bg-danger">Photo Deleted</span>
+            {% else %}
+              <span class="badge bg-light text-dark">{{ log.get_action_display }}</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ log.detail|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <!-- Generated PDFs -->
 <div class="card mb-4">
   <div class="card-header fw-bold">Generated PDFs</div>
@@ -151,11 +298,23 @@
             </td>
             <td>v{{ pdf.version }}</td>
             <td>{{ pdf.generated_at|date:"d M Y, H:i" }}</td>
-            <td>
+            <td class="d-flex gap-1">
+              <a href="{% url 'profiles:preview_pdf' profile.pk pdf.id %}"
+                 target="_blank" class="btn btn-sm btn-outline-primary">
+                Preview
+              </a>
               <a href="{% url 'profiles:download_pdf' profile.pk pdf.id %}"
                  class="btn btn-sm btn-outline-secondary">
                 Download
               </a>
+              <a href="#" onclick="sharePdfWhatsApp('{{ pdf.tier|title }}', 'v{{ pdf.version }}'); return false;"
+                 class="btn btn-sm btn-success" title="Share via WhatsApp">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.588-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.325-.336-.445-.342-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.13 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>
+              </a>
+              <button type="button" class="btn btn-sm btn-outline-dark" title="Email PDF"
+                      data-bs-toggle="modal" data-bs-target="#emailModal{{ pdf.id }}">
+                Email
+              </button>
             </td>
           </tr>
           {% endfor %}
@@ -166,5 +325,70 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Email Modals -->
+{% for pdf in pdfs %}
+<div class="modal fade" id="emailModal{{ pdf.id }}" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Email {{ pdf.tier|title }} PDF (v{{ pdf.version }})</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'profiles:email_pdf' profile.pk pdf.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Recipient Email</label>
+            <input type="email" name="email" class="form-control form-control-sm"
+                   placeholder="recipient@example.com"
+                   value="{{ profile.email|default:'' }}" required>
+          </div>
+          <small class="text-muted">The PDF will be sent as an attachment with a profile summary.</small>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Send Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+function shareWhatsApp() {
+  const name = "{{ profile.full_name|default:profile.display_id }}";
+  const id = "{{ profile.display_id }}";
+  const lookingFor = "{{ profile.looking_for|default:'' }}";
+  const subCaste = "{{ profile.sub_caste|default:'' }}";
+  const height = "{{ profile.height|default:'' }}";
+  const education = "{{ profile.graduation|default:'' }}";
+  const designation = "{{ profile.designation|default:'' }}";
+
+  let msg = `*Reddy & Reddy Matrimony*\n\n`;
+  msg += `*Profile ID:* ${id}\n`;
+  msg += `*Name:* ${name}\n`;
+  if (lookingFor) msg += `*Looking For:* ${lookingFor}\n`;
+  if (subCaste) msg += `*Sub Caste:* ${subCaste}\n`;
+  if (height) msg += `*Height:* ${height}\n`;
+  if (education) msg += `*Education:* ${education}\n`;
+  if (designation) msg += `*Occupation:* ${designation}\n`;
+  msg += `\nFor full details, contact:\n*+91 9368111222*`;
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function sharePdfWhatsApp(tier, version) {
+  const name = "{{ profile.full_name|default:profile.display_id }}";
+  const id = "{{ profile.display_id }}";
+
+  let msg = `*Reddy & Reddy Matrimony*\n\n`;
+  msg += `${tier} Profile PDF (${version}) for *${name}* (${id}) is ready.\n\n`;
+  msg += `Please contact us to receive the PDF:\n*+91 9368111222*`;
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+</script>
 
 {% endblock %}

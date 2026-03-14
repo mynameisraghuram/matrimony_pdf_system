@@ -1,0 +1,292 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>{{ title }}</h2>
+  <div>
+    {% if profile %}
+      <a href="{% url 'profiles:profile_detail' profile.pk %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Profile</a>
+    {% else %}
+      <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Profiles</a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="POST" class="mb-4">
+  {% csrf_token %}
+
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      Please fix the errors below.
+      <ul class="mb-0 mt-1">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <li>{{ field|title }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if duplicates %}
+    <div class="alert alert-warning">
+      <strong>Possible duplicate(s) found:</strong>
+      <table class="table table-sm table-bordered mt-2 mb-2 bg-white">
+        <thead>
+          <tr><th>Profile ID</th><th>Name</th><th>Contact</th></tr>
+        </thead>
+        <tbody>
+          {% for dup in duplicates %}
+          <tr>
+            <td><a href="{% url 'profiles:profile_detail' dup.pk %}" target="_blank">{{ dup.display_id }}</a></td>
+            <td>{{ dup.full_name|default:"—" }}</td>
+            <td>{{ dup.contact_number|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <input type="hidden" name="confirm_save" value="1">
+      <button type="submit" class="btn btn-warning btn-sm">Save Anyway</button>
+      <span class="text-muted small ms-2">or edit the details above and try again</span>
+    </div>
+  {% endif %}
+
+  <!-- Basic Details -->
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Basic Details</div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">First Name *</label>
+          {{ form.first_name }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Last Name</label>
+          {{ form.last_name }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small fw-bold">Looking For</label>
+          {{ form.looking_for }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small fw-bold">Status</label>
+          {{ form.status }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Date of Birth</label>
+          {{ form.date_of_birth }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Time of Birth</label>
+          {{ form.time_of_birth }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Place of Birth</label>
+          {{ form.place_of_birth }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Height</label>
+          {{ form.height }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Marital Status</label>
+          {{ form.marital_status }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Sub Caste</label>
+          {{ form.sub_caste }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Gothram</label>
+          {{ form.gothram }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Star</label>
+          {{ form.star }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Rasi</label>
+          {{ form.rasi }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Contact</div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Email</label>
+          {{ form.email }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Contact Number</label>
+          {{ form.contact_number }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Second Contact</label>
+          {{ form.second_contact_number }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Education & Career -->
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Education & Career</div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Schooling</label>
+          {{ form.schooling }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Graduation</label>
+          {{ form.graduation }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Masters</label>
+          {{ form.masters }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Designation</label>
+          {{ form.designation }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Company</label>
+          {{ form.company_name }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Salary</label>
+          {{ form.salary }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Experience</label>
+          {{ form.years_of_exp }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Job Location</label>
+          {{ form.job_location }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Visa Status</label>
+          {{ form.visa_status }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Details -->
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Family Details</div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Father Name</label>
+          {{ form.father_name }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Father Occupation</label>
+          {{ form.father_occupation }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Father Native</label>
+          {{ form.father_native }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Mother Name</label>
+          {{ form.mother_name }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Mother Occupation</label>
+          {{ form.mother_occupation }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Mother Native</label>
+          {{ form.mother_native }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Siblings</label>
+          {{ form.siblings }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Parents Staying</label>
+          {{ form.parents_staying }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Actual Property</label>
+          {{ form.actual_property }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Shared Property</label>
+          {{ form.shared_property }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Expected Property</label>
+          {{ form.expected_property }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partner Preferences -->
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Partner Preferences</div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Preferred Height</label>
+          {{ form.preferred_height }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Age Gap</label>
+          {{ form.age_gap }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Preferred Sub Caste</label>
+          {{ form.preferred_sub_caste }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Astrology</label>
+          {{ form.astrology }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Looking Country</label>
+          {{ form.looking_country }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Looking State</label>
+          {{ form.looking_state }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Education Preference</label>
+          {{ form.education_preference }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-bold">Career Preferences</label>
+          {{ form.career_preferences }}
+        </div>
+        <div class="col-md-12">
+          <label class="form-label small fw-bold">Special Conditions</label>
+          {{ form.special_conditions }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+      {% if profile %}Update Profile{% else %}Create Profile{% endif %}
+    </button>
+    {% if profile %}
+      <a href="{% url 'profiles:profile_detail' profile.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    {% else %}
+      <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

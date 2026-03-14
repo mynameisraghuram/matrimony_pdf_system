@@ -9,6 +9,9 @@
 <body>
   <nav class="navbar navbar-dark bg-dark px-4 mb-4">
     <a class="navbar-brand" href="{% url 'profiles:profile_list' %}">Matrimony PDF System</a>
+    <div class="d-flex gap-3">
+      <a href="{% url 'profiles:activity_log' %}" class="text-light text-decoration-none small">Activity Log</a>
+    </div>
   </nav>
 
   <div class="container">
@@ -34,6 +37,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     function showLoading(text) {
