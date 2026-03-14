@@ -1,0 +1,97 @@
+{% extends "pdf/_profile_base.html" %}
+
+{% block title %}{{ profile.display_id }} - Standard Profile{% endblock %}
+
+{% block banner %}
+    <div class="profile-banner">
+        <span class="tier-badge">Standard Profile</span>
+        <h2>{{ profile.first_name|default:profile.display_id }}{% if profile.looking_for %} — {{ profile.looking_for }}{% endif %}</h2>
+        <div class="subtitle">
+            {% if profile.marital_status %}{{ profile.marital_status }}{% endif %}
+            {% if profile.height %} &bull; {{ profile.height }}{% endif %}
+            {% if profile.sub_caste %} &bull; {{ profile.sub_caste }}{% endif %}
+            {% if age_display %} &bull; Age: {{ age_display }}{% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- ═══ PERSONAL + HOROSCOPE ═══ -->
+    <table class="two-col">
+        <tr>
+            <td class="col-left">
+                <div class="section">
+                    <div class="section-title">Personal Details</div>
+                    <table>
+                        <tr><td class="label">Age</td><td class="value">{{ age_display|default:"—" }}</td></tr>
+                        <tr><td class="label">Marital Status</td><td class="value">{{ profile.marital_status|default:"—" }}</td></tr>
+                        <tr><td class="label">Height</td><td class="value">{{ profile.height|default:"—" }}</td></tr>
+                        <tr><td class="label">Origin</td><td class="value">{{ ancestral_origin|default:"—" }}</td></tr>
+                    </table>
+                </div>
+            </td>
+            <td class="col-right">
+                <div class="section">
+                    <div class="section-title">Horoscope &amp; Caste</div>
+                    <table>
+                        <tr><td class="label">Rasi</td><td class="value">{{ profile.rasi|default:"—" }}</td></tr>
+                        <tr><td class="label">Sub Caste</td><td class="value">{{ profile.sub_caste|default:"—" }}</td></tr>
+                        <tr><td class="label">Gothram</td><td class="value">{{ profile.gothram|default:"—" }}</td></tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ═══ EDUCATION + CAREER ═══ -->
+    <table class="two-col">
+        <tr>
+            <td class="col-left">
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    <table>
+                        <tr><td class="label">Highest Qualification</td><td class="value">{{ highest_education|default:"—" }}</td></tr>
+                    </table>
+                </div>
+            </td>
+            <td class="col-right">
+                <div class="section">
+                    <div class="section-title">Career</div>
+                    <table>
+                        <tr><td class="label">Occupation</td><td class="value">{{ profile.designation|default:"—" }}</td></tr>
+                        <tr><td class="label">Annual Income</td><td class="value">{{ profile.salary|default:"—" }}</td></tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ═══ FAMILY ═══ -->
+    <div class="section">
+        <div class="section-title">Family Details</div>
+        <table>
+            <tr>
+                <td class="label" style="width:20%;">Father Occupation</td>
+                <td class="value" style="width:30%;">{{ profile.father_occupation|default:"—" }}</td>
+                <td class="label" style="width:20%;">Mother Occupation</td>
+                <td class="value" style="width:30%;">{{ profile.mother_occupation|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Siblings</td>
+                <td class="value" colspan="3">{{ profile.siblings|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Contact</td>
+                <td class="value" colspan="3">{{ masked_contact|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}
+
+{% block upgrade_banner %}
+    <div class="upgrade-banner">
+        <p class="title">Want to see the complete profile?</p>
+        <p class="text">Get full details including name, family background, partner preferences, property details, and AI-generated profile summary.</p>
+        <p class="phone">Contact Reddy &amp; Reddy Matrimony &mdash; <a href="{{ whatsapp_url }}" style="color: #25D366; text-decoration: none;">+91 9368111222</a></p>
+    </div>
+{% endblock %}

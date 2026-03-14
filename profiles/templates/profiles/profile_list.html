@@ -1,0 +1,47 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}All Profiles{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>All Profiles <span class="badge bg-secondary">{{ profiles.count }}</span></h2>
+  <form method="POST" action="{% url 'profiles:sync_sheet' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success"
+            onclick="this.disabled=true; this.innerText='Syncing…'; showLoading('Syncing from Google Sheet…'); this.form.submit();">
+      Sync Google Sheet
+    </button>
+  </form>
+</div>
+
+{% if profiles %}
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Profile ID</th>
+        <th>Full Name</th>
+        <th>Contact Number</th>
+        <th>Email</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for profile in profiles %}
+      <tr>
+        <td>
+          <a href="{% url 'profiles:profile_detail' profile.pk %}">
+            {{ profile.display_id }}
+          </a>
+        </td>
+        <td>{{ profile.full_name|default:"—" }}</td>
+        <td>{{ profile.contact_number|default:"—" }}</td>
+        <td>{{ profile.email|default:"—" }}</td>
+        <td>{{ profile.updated_at|date:"d M Y, H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="alert alert-info">No profiles found. Click "Sync Google Sheet" above to import profiles.</div>
+{% endif %}
+{% endblock %}

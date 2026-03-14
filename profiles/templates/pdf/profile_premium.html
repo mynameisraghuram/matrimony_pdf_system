@@ -1,187 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>{{ profile.full_name|default:"Profile" }} - {{ company_name }}</title>
-    <style>
-        @page {
-            size: A4;
-            margin: 12mm 16mm 12mm 16mm;
-        }
-        body {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 10px;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            line-height: 1.35;
-        }
+{% extends "pdf/_profile_base.html" %}
 
-        /* ── Header ── */
-        .header {
-            text-align: center;
-            padding: 6px 0 8px 0;
-            border-bottom: 3px double #C42027;
-            margin-bottom: 10px;
-        }
-        .header img.logo {
-            width: 120px;
-            height: auto;
-            display: block;
-            margin: 0 auto 4px auto;
-        }
-        .header .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #C42027;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-        .header .tagline {
-            font-size: 8px;
-            color: #D4A017;
-            font-style: italic;
-            margin: 2px 0 0 0;
-        }
-        .header .contact {
-            font-size: 8px;
-            color: #666;
-            margin: 2px 0 0 0;
-        }
+{% block title %}{{ profile.full_name|default:"Profile" }} - Premium Profile{% endblock %}
 
-        /* ── Profile Banner ── */
-        .profile-banner {
-            background: #C42027;
-            color: #fff;
-            padding: 7px 14px;
-            margin-bottom: 8px;
-        }
-        .profile-banner h2 {
-            margin: 0;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Georgia, serif;
-        }
-        .profile-banner .subtitle {
-            font-size: 9px;
-            color: #f5d5d5;
-            margin-top: 1px;
-        }
-
-        /* ── Section ── */
-        .section {
-            margin-bottom: 6px;
-        }
-        .section-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #C42027;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1.5px solid #D4A017;
-            padding-bottom: 2px;
-            margin-bottom: 3px;
-        }
-
-        /* ── Data Table ── */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table td {
-            padding: 2px 5px;
-            vertical-align: top;
-            font-size: 9.5px;
-        }
-        .label {
-            font-weight: bold;
-            color: #1C2526;
-            width: 28%;
-            white-space: nowrap;
-        }
-        .value {
-            color: #333;
-        }
-        table tr:nth-child(even) {
-            background: #fdf5f5;
-        }
-
-        /* ── Two Column ── */
-        .two-col {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .two-col > tbody > tr > td {
-            width: 50%;
-            vertical-align: top;
-            padding: 0;
-        }
-        .two-col .col-left { padding-right: 6px; }
-        .two-col .col-right { padding-left: 6px; }
-
-        /* ── Summary Box ── */
-        .summary-box {
-            border: 1px solid #e8c8c8;
-            border-left: 4px solid #D4A017;
-            padding: 7px 10px;
-            background: #fdf8f5;
-            font-size: 9.5px;
-            line-height: 1.5;
-            color: #333;
-        }
-
-        /* ── Gold Divider ── */
-        .gold-divider {
-            border: none;
-            border-top: 1px solid #D4A017;
-            margin: 6px 0;
-        }
-
-        /* ── Footer ── */
-        .footer {
-            text-align: center;
-            font-size: 7.5px;
-            color: #999;
-            border-top: 2px double #C42027;
-            padding-top: 4px;
-            margin-top: 8px;
-        }
-        .footer .conf {
-            color: #C42027;
-            font-weight: bold;
-            font-size: 7px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- ═══ HEADER ═══ -->
-    <div class="header">
-        {% if logo_uri %}
-        <img class="logo" src="{{ logo_uri }}" alt="{{ company_name }}">
-        {% endif %}
-        <div class="company-name">{{ company_name|default:"Matrimony Services" }}</div>
-        {% if company_tagline %}
-        <div class="tagline">{{ company_tagline }}</div>
-        {% endif %}
-        <div class="contact">+91 9368111222 | <a href="{{ whatsapp_url }}" style="color: #25D366; text-decoration: none;">WhatsApp: wa.me/9368111222</a></div>
-    </div>
-
-    <!-- ═══ PROFILE BANNER ═══ -->
+{% block banner %}
     <div class="profile-banner">
-        <h2>{{ profile.full_name|default:"—" }}</h2>
+        <span class="tier-badge">Premium Profile</span>
+        <h2>{{ profile.full_name|default:"—" }}{% if profile.looking_for %} — {{ profile.looking_for }}{% endif %}</h2>
         <div class="subtitle">
-            {{ profile.looking_for|default:"" }}
-            {% if profile.marital_status %} &bull; {{ profile.marital_status }}{% endif %}
+            {% if profile.marital_status %}{{ profile.marital_status }}{% endif %}
             {% if profile.height %} &bull; {{ profile.height }}{% endif %}
             {% if profile.sub_caste %} &bull; {{ profile.sub_caste }}{% endif %}
             {% if profile.date_of_birth %} &bull; DOB: {{ profile.date_of_birth }}{% endif %}
         </div>
     </div>
+{% endblock %}
 
-    <!-- ═══ BASIC + HOROSCOPE ═══ -->
+{% block content %}
+    <!-- ═══ PERSONAL + HOROSCOPE ═══ -->
     <table class="two-col">
         <tr>
             <td class="col-left">
@@ -204,7 +39,6 @@
                         <tr><td class="label">Rasi</td><td class="value">{{ profile.rasi|default:"—" }}</td></tr>
                         <tr><td class="label">Sub Caste</td><td class="value">{{ profile.sub_caste|default:"—" }}</td></tr>
                         <tr><td class="label">Gothram</td><td class="value">{{ profile.gothram|default:"—" }}</td></tr>
-                        <tr><td class="label">Looking For</td><td class="value">{{ profile.looking_for|default:"—" }}</td></tr>
                     </table>
                 </div>
             </td>
@@ -332,16 +166,4 @@
         </div>
     </div>
     {% endif %}
-
-    <!-- ═══ FOOTER ═══ -->
-    <div class="footer">
-        <div class="conf">Confidential — For Matrimonial Purposes Only</div>
-        <p style="margin: 2px 0 0 0;">
-            {{ company_name }} &nbsp;|&nbsp; +91 9368111222 &nbsp;|&nbsp;
-            <a href="{{ whatsapp_url }}" style="color: #25D366; text-decoration: none;">WhatsApp</a>
-            &nbsp;|&nbsp; Profile ID: {{ profile.display_id }}
-        </p>
-    </div>
-
-</body>
-</html>
+{% endblock %}

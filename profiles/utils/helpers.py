@@ -4,12 +4,13 @@ from profiles.services.pdf_generator import generate_pdf_from_html
 from profiles.services.storage_service import build_pdf_path
 
 
-def generate_profile_pdf(profile):
-    profile.story_summary = generate_story(profile.__dict__)
-    profile.save()
+def generate_profile_pdf(profile, tier="premium"):
+    if tier == "premium" and not profile.story_summary:
+        profile.story_summary = generate_story(profile.__dict__)
+        profile.save()
 
-    html = render_profile_html(profile)
-    pdf_path = build_pdf_path(profile.__dict__)
+    html = render_profile_html(profile, tier=tier)
+    pdf_path = build_pdf_path(profile.__dict__, tier=tier)
     generate_pdf_from_html(html, pdf_path)
 
     return pdf_path

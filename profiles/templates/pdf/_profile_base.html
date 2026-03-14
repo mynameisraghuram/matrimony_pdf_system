@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Profile{% endblock %} - {{ company_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 12mm 16mm 12mm 16mm;
+        }
+        body {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 10px;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.35;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding: 6px 0 8px 0;
+            border-bottom: 3px double #C42027;
+            margin-bottom: 10px;
+        }
+        .header img.logo {
+            width: 120px;
+            height: auto;
+            display: block;
+            margin: 0 auto 4px auto;
+        }
+        .header .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #C42027;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+        .header .tagline {
+            font-size: 8px;
+            color: #D4A017;
+            font-style: italic;
+            margin: 2px 0 0 0;
+        }
+        .header .contact {
+            font-size: 8px;
+            color: #666;
+            margin: 2px 0 0 0;
+        }
+
+        /* ── Profile Banner ── */
+        .profile-banner {
+            background: #C42027;
+            color: #fff;
+            padding: 7px 14px;
+            margin-bottom: 8px;
+        }
+        .profile-banner h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Georgia, serif;
+        }
+        .profile-banner .subtitle {
+            font-size: 9px;
+            color: #f5d5d5;
+            margin-top: 1px;
+        }
+        .profile-banner .tier-badge {
+            font-size: 7px;
+            color: #D4A017;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            float: right;
+            margin-top: 3px;
+        }
+
+        /* ── Section ── */
+        .section {
+            margin-bottom: 6px;
+        }
+        .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #C42027;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1.5px solid #D4A017;
+            padding-bottom: 2px;
+            margin-bottom: 3px;
+        }
+
+        /* ── Data Table ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table td {
+            padding: 2px 5px;
+            vertical-align: top;
+            font-size: 9.5px;
+        }
+        .label {
+            font-weight: bold;
+            color: #1C2526;
+            width: 28%;
+            white-space: nowrap;
+        }
+        .value {
+            color: #333;
+        }
+        table tr:nth-child(even) {
+            background: #fdf5f5;
+        }
+
+        /* ── Two Column ── */
+        .two-col {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .two-col > tbody > tr > td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0;
+        }
+        .two-col .col-left { padding-right: 6px; }
+        .two-col .col-right { padding-left: 6px; }
+
+        /* ── Summary Box ── */
+        .summary-box {
+            border: 1px solid #e8c8c8;
+            border-left: 4px solid #D4A017;
+            padding: 7px 10px;
+            background: #fdf8f5;
+            font-size: 9.5px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        /* ── Gold Divider ── */
+        .gold-divider {
+            border: none;
+            border-top: 1px solid #D4A017;
+            margin: 6px 0;
+        }
+
+        /* ── Upgrade Banner ── */
+        .upgrade-banner {
+            background: #fdf8f0;
+            border: 1.5px solid #D4A017;
+            padding: 8px 14px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .upgrade-banner .title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #C42027;
+            margin: 0 0 3px 0;
+        }
+        .upgrade-banner .text {
+            font-size: 9px;
+            color: #333;
+            margin: 0;
+        }
+        .upgrade-banner .phone {
+            font-size: 11px;
+            font-weight: bold;
+            color: #C42027;
+            margin: 3px 0 0 0;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            font-size: 7.5px;
+            color: #999;
+            border-top: 2px double #C42027;
+            padding-top: 4px;
+            margin-top: 8px;
+        }
+        .footer .conf {
+            color: #C42027;
+            font-weight: bold;
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="header">
+        {% if logo_uri %}
+        <img class="logo" src="{{ logo_uri }}" alt="{{ company_name }}">
+        {% endif %}
+        <div class="company-name">{{ company_name|default:"Matrimony Services" }}</div>
+        {% if company_tagline %}
+        <div class="tagline">{{ company_tagline }}</div>
+        {% endif %}
+        <div class="contact">+91 9368111222 | <a href="{{ whatsapp_url }}" style="color: #25D366; text-decoration: none;">WhatsApp: wa.me/9368111222</a></div>
+    </div>
+
+    {% block banner %}{% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block upgrade_banner %}{% endblock %}
+
+    <!-- ═══ FOOTER ═══ -->
+    <div class="footer">
+        <div class="conf">Confidential — For Matrimonial Purposes Only</div>
+        <p style="margin: 2px 0 0 0;">
+            {{ company_name }} &nbsp;|&nbsp; +91 9368111222 &nbsp;|&nbsp;
+            <a href="{{ whatsapp_url }}" style="color: #25D366; text-decoration: none;">WhatsApp</a>
+            &nbsp;|&nbsp; Profile ID: {{ profile.display_id }}
+            {% if tier_label %}&nbsp;|&nbsp; {{ tier_label }}{% endif %}
+        </p>
+    </div>
+
+</body>
+</html>

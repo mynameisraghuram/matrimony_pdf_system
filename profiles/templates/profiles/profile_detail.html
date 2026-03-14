@@ -1,0 +1,170 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}{{ profile.full_name|default:profile.display_id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <a href="{% url 'profiles:profile_list' %}" class="text-decoration-none text-muted">&larr; All Profiles</a>
+    <h2 class="mt-1 mb-0">{{ profile.full_name|default:profile.display_id }}</h2>
+    <small class="text-muted">Profile ID: {{ profile.display_id }}</small>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="POST" action="{% url 'profiles:generate_pdf' profile.pk 'standard' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary"
+              onclick="this.disabled=true; this.innerText='Generating…'; showLoading('Generating Standard PDF…'); this.form.submit();">
+        Generate Standard
+      </button>
+    </form>
+    <form method="POST" action="{% url 'profiles:generate_pdf' profile.pk 'premium' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary"
+              onclick="this.disabled=true; this.innerText='Generating…'; showLoading('Generating Premium PDF… AI story + PDF rendering may take 15-30 seconds.'); this.form.submit();">
+        Generate Premium
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Basic Details -->
+<div class="card mb-3">
+  <div class="card-header fw-bold">Basic Details</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Full Name</dt>       <dd class="col-sm-8">{{ profile.full_name|default:"—" }}</dd>
+      <dt class="col-sm-4">Date of Birth</dt>   <dd class="col-sm-8">{{ profile.date_of_birth|default:"—" }}</dd>
+      <dt class="col-sm-4">Time of Birth</dt>   <dd class="col-sm-8">{{ profile.time_of_birth|default:"—" }}</dd>
+      <dt class="col-sm-4">Place of Birth</dt>  <dd class="col-sm-8">{{ profile.place_of_birth|default:"—" }}</dd>
+      <dt class="col-sm-4">Height</dt>           <dd class="col-sm-8">{{ profile.height|default:"—" }}</dd>
+      <dt class="col-sm-4">Marital Status</dt>  <dd class="col-sm-8">{{ profile.marital_status|default:"—" }}</dd>
+      <dt class="col-sm-4">Looking For</dt>     <dd class="col-sm-8">{{ profile.looking_for|default:"—" }}</dd>
+      <dt class="col-sm-4">Star</dt>             <dd class="col-sm-8">{{ profile.star|default:"—" }}</dd>
+      <dt class="col-sm-4">Rasi</dt>             <dd class="col-sm-8">{{ profile.rasi|default:"—" }}</dd>
+      <dt class="col-sm-4">Sub Caste</dt>        <dd class="col-sm-8">{{ profile.sub_caste|default:"—" }}</dd>
+      <dt class="col-sm-4">Gothram</dt>          <dd class="col-sm-8">{{ profile.gothram|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Contact -->
+<div class="card mb-3">
+  <div class="card-header fw-bold">Contact</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Email</dt>                   <dd class="col-sm-8">{{ profile.email|default:"—" }}</dd>
+      <dt class="col-sm-4">Contact Number</dt>          <dd class="col-sm-8">{{ profile.contact_number|default:"—" }}</dd>
+      <dt class="col-sm-4">Second Contact Number</dt>   <dd class="col-sm-8">{{ profile.second_contact_number|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Education & Career -->
+<div class="card mb-3">
+  <div class="card-header fw-bold">Education &amp; Career</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Schooling</dt>       <dd class="col-sm-8">{{ profile.schooling|default:"—" }}</dd>
+      <dt class="col-sm-4">Graduation</dt>      <dd class="col-sm-8">{{ profile.graduation|default:"—" }}</dd>
+      <dt class="col-sm-4">Masters</dt>         <dd class="col-sm-8">{{ profile.masters|default:"—" }}</dd>
+      <dt class="col-sm-4">Designation</dt>     <dd class="col-sm-8">{{ profile.designation|default:"—" }}</dd>
+      <dt class="col-sm-4">Company</dt>         <dd class="col-sm-8">{{ profile.company_name|default:"—" }}</dd>
+      <dt class="col-sm-4">Salary</dt>          <dd class="col-sm-8">{{ profile.salary|default:"—" }}</dd>
+      <dt class="col-sm-4">Experience</dt>      <dd class="col-sm-8">{{ profile.years_of_exp|default:"—" }}</dd>
+      <dt class="col-sm-4">Job Location</dt>    <dd class="col-sm-8">{{ profile.job_location|default:"—" }}</dd>
+      <dt class="col-sm-4">Visa Status</dt>     <dd class="col-sm-8">{{ profile.visa_status|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Family Details -->
+<div class="card mb-3">
+  <div class="card-header fw-bold">Family Details</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Father Name</dt>         <dd class="col-sm-8">{{ profile.father_name|default:"—" }}</dd>
+      <dt class="col-sm-4">Father Occupation</dt>   <dd class="col-sm-8">{{ profile.father_occupation|default:"—" }}</dd>
+      <dt class="col-sm-4">Father Native</dt>       <dd class="col-sm-8">{{ profile.father_native|default:"—" }}</dd>
+      <dt class="col-sm-4">Mother Name</dt>         <dd class="col-sm-8">{{ profile.mother_name|default:"—" }}</dd>
+      <dt class="col-sm-4">Mother Occupation</dt>   <dd class="col-sm-8">{{ profile.mother_occupation|default:"—" }}</dd>
+      <dt class="col-sm-4">Mother Native</dt>       <dd class="col-sm-8">{{ profile.mother_native|default:"—" }}</dd>
+      <dt class="col-sm-4">Siblings</dt>            <dd class="col-sm-8">{{ profile.siblings|default:"—" }}</dd>
+      <dt class="col-sm-4">Parents Staying</dt>     <dd class="col-sm-8">{{ profile.parents_staying|default:"—" }}</dd>
+      <dt class="col-sm-4">Actual Property</dt>     <dd class="col-sm-8">{{ profile.actual_property|default:"—" }}</dd>
+      <dt class="col-sm-4">Shared Property</dt>     <dd class="col-sm-8">{{ profile.shared_property|default:"—" }}</dd>
+      <dt class="col-sm-4">Expected Property</dt>   <dd class="col-sm-8">{{ profile.expected_property|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Partner Preferences -->
+<div class="card mb-3">
+  <div class="card-header fw-bold">Partner Preferences</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Preferred Height</dt>       <dd class="col-sm-8">{{ profile.preferred_height|default:"—" }}</dd>
+      <dt class="col-sm-4">Age Gap</dt>                <dd class="col-sm-8">{{ profile.age_gap|default:"—" }}</dd>
+      <dt class="col-sm-4">Preferred Sub Caste</dt>    <dd class="col-sm-8">{{ profile.preferred_sub_caste|default:"—" }}</dd>
+      <dt class="col-sm-4">Astrology</dt>              <dd class="col-sm-8">{{ profile.astrology|default:"—" }}</dd>
+      <dt class="col-sm-4">Looking Country</dt>        <dd class="col-sm-8">{{ profile.looking_country|default:"—" }}</dd>
+      <dt class="col-sm-4">Looking State</dt>          <dd class="col-sm-8">{{ profile.looking_state|default:"—" }}</dd>
+      <dt class="col-sm-4">Education Preference</dt>   <dd class="col-sm-8">{{ profile.education_preference|default:"—" }}</dd>
+      <dt class="col-sm-4">Career Preferences</dt>     <dd class="col-sm-8">{{ profile.career_preferences|default:"—" }}</dd>
+      <dt class="col-sm-4">Special Conditions</dt>     <dd class="col-sm-8">{{ profile.special_conditions|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Story Summary -->
+{% if profile.story_summary %}
+<div class="card mb-4">
+  <div class="card-header fw-bold">Story Summary</div>
+  <div class="card-body">
+    <p class="mb-0" style="white-space: pre-wrap;">{{ profile.story_summary }}</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Generated PDFs -->
+<div class="card mb-4">
+  <div class="card-header fw-bold">Generated PDFs</div>
+  <div class="card-body p-0">
+    {% if pdfs %}
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Tier</th>
+            <th>Version</th>
+            <th>Generated At</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pdf in pdfs %}
+          <tr>
+            <td>
+              {% if pdf.tier == "premium" %}
+                <span class="badge bg-warning text-dark">Premium</span>
+              {% else %}
+                <span class="badge bg-secondary">Standard</span>
+              {% endif %}
+            </td>
+            <td>v{{ pdf.version }}</td>
+            <td>{{ pdf.generated_at|date:"d M Y, H:i" }}</td>
+            <td>
+              <a href="{% url 'profiles:download_pdf' profile.pk pdf.id %}"
+                 class="btn btn-sm btn-outline-secondary">
+                Download
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted p-3 mb-0">No PDFs generated yet. Click a generate button above.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

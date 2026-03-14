@@ -13,7 +13,8 @@ venv/
 # OAuth tokens
 token.json
 
-# Secrets
+# Secrets / Credentials
+credentials/
 service_account.json
 oauth_client_secret.json
 

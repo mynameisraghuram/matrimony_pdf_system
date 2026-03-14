@@ -1,50 +1,125 @@
-import os
+"""
+test_sheet_pipeline.py
+
+Tests the complete Google Sheet pipeline without saving to DB.
+
+Flow:
+Google Sheet -> mapper -> normalizer -> validator
+
+Useful for checking:
+- raw sheet data
+- mapped output
+- normalized output
+- validation result
+before running actual DB sync
+"""
+
 import sys
-from pprint import pprint
+from pathlib import Path
 
-# Add project root to Python path
-PROJECT_ROOT = r"D:\rr_projects\matrimony_pdf_system"
-sys.path.append(PROJECT_ROOT)
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+# -------------------------------------------------------------------
+# Project path setup
+# -------------------------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
 
-from profiles.services.sheet_reader import get_sheet_records
+
+from profiles.services.sheet_reader import fetch_sheet_rows
 from profiles.services.mapper import map_record
 from profiles.services.normalizer import normalize_record
 from profiles.services.validator import validate_record
 
 
-def main():
-    rows = get_sheet_records()
+def print_section(title: str):
+    print("\n" + "=" * 80)
+    print(title)
+    print("=" * 80)
 
-    print(f"Total rows fetched: {len(rows)}")
+
+def print_dict(title: str, data: dict):
+    print(f"\n{title}")
     print("-" * 80)
 
-    if not rows:
-        print("No rows found in Google Sheet.")
+    if not data:
+        print("No data")
         return
 
-    first_row = rows[0]
+    for key, value in data.items():
+        print(f"{key}: {value}")
 
-    print("RAW ROW:")
-    pprint(first_row)
-    print("-" * 80)
 
-    mapped = map_record(first_row)
-    print("MAPPED ROW:")
-    pprint(mapped)
-    print("-" * 80)
+def run_pipeline_test(max_rows: int = 5):
+    print_section("Testing Google Sheet Pipeline")
 
-    normalized = normalize_record(mapped)
-    print("NORMALIZED ROW:")
-    pprint(normalized)
-    print("-" * 80)
+    rows = fetch_sheet_rows()
 
-    validation_result = validate_record(normalized)
-    print("VALIDATION RESULT:")
-    pprint(validation_result)
-    print("-" * 80)
+    if not rows:
+        print("No rows returned from Google Sheet.")
+        return
+
+    print(f"Rows fetched from sheet: {len(rows)}")
+    print(f"Testing first {min(len(rows), max_rows)} row(s) only.")
+
+    valid_count = 0
+    invalid_count = 0
+
+    for index, raw_row in enumerate(rows[:max_rows], start=1):
+        print_section(f"ROW {index}")
+
+        # -------------------------------------------------------------
+        # Raw row
+        # -------------------------------------------------------------
+        print_dict("RAW SHEET DATA", raw_row)
+
+        # -------------------------------------------------------------
+        # Mapper
+        # -------------------------------------------------------------
+        mapped = map_record(raw_row)
+        print_dict("MAPPED DATA", mapped)
+
+        # -------------------------------------------------------------
+        # Normalizer
+        # -------------------------------------------------------------
+        normalized = normalize_record(mapped)
+        print_dict("NORMALIZED DATA", normalized)
+
+        # -------------------------------------------------------------
+        # Validator
+        # -------------------------------------------------------------
+        result = validate_record(normalized)
+
+        print("\nVALIDATION RESULT")
+        print("-" * 80)
+        print(f"is_valid: {result['is_valid']}")
+
+        print("\nErrors:")
+        if result["errors"]:
+            for err in result["errors"]:
+                print(f" - {err}")
+        else:
+            print(" - None")
+
+        print("\nWarnings:")
+        if result["warnings"]:
+            for warn in result["warnings"]:
+                print(f" - {warn}")
+        else:
+            print(" - None")
+
+        print_dict("CLEANED DATA", result["cleaned_data"])
+
+        if result["is_valid"]:
+            valid_count += 1
+        else:
+            invalid_count += 1
+
+    print_section("PIPELINE TEST SUMMARY")
+    print(f"Rows tested : {min(len(rows), max_rows)}")
+    print(f"Valid rows  : {valid_count}")
+    print(f"Invalid rows: {invalid_count}")
+    print("Pipeline test finished successfully.")
 
 
 if __name__ == "__main__":
-    main()
+    run_pipeline_test(max_rows=5)

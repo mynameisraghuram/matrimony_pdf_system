@@ -3,6 +3,7 @@ from django.db import models
 
 class Profile(models.Model):
     profile_id = models.CharField(max_length=50, unique=True)
+    display_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     second_contact_number = models.CharField(max_length=20, blank=True, null=True)
@@ -64,19 +65,34 @@ class Profile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.display_id:
+            last = Profile.objects.filter(display_id__startswith="RR-").order_by("-display_id").first()
+            if last and last.display_id:
+                num = int(last.display_id.split("-")[1]) + 1
+            else:
+                num = 1
+            self.display_id = f"RR-{num:04d}"
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.full_name or self.profile_id
-    
+        return self.full_name or self.display_id or self.profile_id
 
 class GeneratedPDF(models.Model):
+    TIER_CHOICES = [
+        ("standard", "Standard"),
+        ("premium", "Premium"),
+    ]
+
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="pdfs")
     file_path = models.CharField(max_length=500)
     version = models.IntegerField(default=1)
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES, default="premium")
     template_used = models.CharField(max_length=100, default="default")
     generated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.profile.profile_id} - v{self.version}"
+        return f"{self.profile.profile_id} - v{self.version} ({self.tier})"
 
 
 class GenerationLog(models.Model):
