@@ -22,6 +22,7 @@ oauth_client_secret.json
 db.sqlite3
 media/
 staticfiles/
+backups/
 
 # Logs
 logs/

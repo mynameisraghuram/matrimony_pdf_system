@@ -26,4 +26,7 @@ urlpatterns = [
     path("<int:pk>/add-interaction/", views.add_interaction, name="add_interaction"),
     path("<int:pk>/interaction/<int:interaction_id>/delete/", views.delete_interaction, name="delete_interaction"),
     path("follow-ups/", views.follow_ups, name="follow_ups"),
+    path("backup/", views.backup_page, name="backup_page"),
+    path("backup/download/", views.backup_database, name="backup_database"),
+    path("backup/restore/", views.restore_database, name="restore_database"),
 ]

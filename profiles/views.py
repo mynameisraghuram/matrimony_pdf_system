@@ -1033,3 +1033,137 @@ def follow_ups(request):
         "overdue": overdue,
         "today": today,
     })
+
+
+@login_required
+def backup_database(request):
+    """Download the SQLite database as a backup file."""
+    if not request.user.is_superuser:
+        messages.error(request, "Only admin users can download backups.")
+        return redirect("profiles:profile_list")
+
+    import shutil
+    import tempfile
+    from datetime import datetime
+
+    db_path = settings.DATABASES["default"]["NAME"]
+    if not os.path.exists(db_path):
+        messages.error(request, "Database file not found.")
+        return redirect("profiles:profile_list")
+
+    # Copy to temp file to avoid locking issues
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".sqlite3")
+    tmp.close()
+    shutil.copy2(db_path, tmp.name)
+
+    response = FileResponse(
+        open(tmp.name, "rb"),
+        as_attachment=True,
+        filename=f"matrimony_backup_{timestamp}.sqlite3",
+    )
+    # Clean up temp file after response is sent
+    response._tmp_path = tmp.name
+    return response
+
+
+@login_required
+def restore_database(request):
+    """Restore the SQLite database from an uploaded backup file."""
+    if not request.user.is_superuser:
+        messages.error(request, "Only admin users can restore backups.")
+        return redirect("profiles:profile_list")
+
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    uploaded = request.FILES.get("backup_file")
+    if not uploaded:
+        messages.error(request, "No backup file selected.")
+        return redirect("profiles:backup_page")
+
+    if not uploaded.name.endswith(".sqlite3"):
+        messages.error(request, "Invalid file. Please upload a .sqlite3 backup file.")
+        return redirect("profiles:backup_page")
+
+    import shutil
+    import tempfile
+    import sqlite3
+    from datetime import datetime
+
+    # Save uploaded file to temp location
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".sqlite3")
+    for chunk in uploaded.chunks():
+        tmp.write(chunk)
+    tmp.close()
+
+    # Validate it's a real SQLite database
+    try:
+        conn = sqlite3.connect(tmp.name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='profiles_profile'")
+        if not cursor.fetchone():
+            conn.close()
+            os.remove(tmp.name)
+            messages.error(request, "Invalid backup: does not contain the profiles table.")
+            return redirect("profiles:backup_page")
+        conn.close()
+    except Exception as e:
+        os.remove(tmp.name)
+        messages.error(request, f"Invalid database file: {e}")
+        return redirect("profiles:backup_page")
+
+    db_path = str(settings.DATABASES["default"]["NAME"])
+
+    # Create a backup of current DB before replacing
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir = os.path.join(settings.BASE_DIR, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    pre_restore_backup = os.path.join(backup_dir, f"pre_restore_{timestamp}.sqlite3")
+    shutil.copy2(db_path, pre_restore_backup)
+
+    # Replace the database
+    try:
+        from django import db
+        db.connections.close_all()
+        shutil.copy2(tmp.name, db_path)
+        messages.success(request, f"Database restored successfully from {uploaded.name}. Pre-restore backup saved.")
+    except Exception as e:
+        messages.error(request, f"Restore failed: {e}")
+    finally:
+        os.remove(tmp.name)
+
+    return redirect("profiles:backup_page")
+
+
+@login_required
+def backup_page(request):
+    """Show backup/restore page with list of local backups."""
+    if not request.user.is_superuser:
+        messages.error(request, "Only admin users can access backups.")
+        return redirect("profiles:profile_list")
+
+    backups = []
+    backup_dir = os.path.join(settings.BASE_DIR, "backups")
+    if os.path.exists(backup_dir):
+        for fname in sorted(os.listdir(backup_dir), reverse=True):
+            if fname.endswith(".sqlite3"):
+                fpath = os.path.join(backup_dir, fname)
+                size_mb = os.path.getsize(fpath) / (1024 * 1024)
+                from datetime import datetime
+                mtime = datetime.fromtimestamp(os.path.getmtime(fpath))
+                backups.append({
+                    "name": fname,
+                    "size": f"{size_mb:.2f} MB",
+                    "date": mtime,
+                })
+
+    db_path = settings.DATABASES["default"]["NAME"]
+    db_size = os.path.getsize(db_path) / (1024 * 1024) if os.path.exists(db_path) else 0
+    profile_count = Profile.objects.count()
+
+    return render(request, "profiles/backup.html", {
+        "backups": backups,
+        "db_size": f"{db_size:.2f} MB",
+        "profile_count": profile_count,
+    })

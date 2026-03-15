@@ -1,0 +1,84 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}Backup & Restore{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Backup &amp; Restore</h2>
+  <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Profiles</a>
+</div>
+
+<div class="row g-4">
+  <!-- Download Backup -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header fw-bold">Download Backup</div>
+      <div class="card-body">
+        <p class="small text-muted mb-3">
+          Download a copy of the entire database including all profiles, PDFs, interactions, and notes.
+        </p>
+        <dl class="row mb-3 small">
+          <dt class="col-sm-5">Database Size</dt>
+          <dd class="col-sm-7">{{ db_size }}</dd>
+          <dt class="col-sm-5">Total Profiles</dt>
+          <dd class="col-sm-7">{{ profile_count }}</dd>
+        </dl>
+        <a href="{% url 'profiles:backup_database' %}" class="btn text-white" style="background-color: #C42027;">
+          Download Backup (.sqlite3)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore -->
+  <div class="col-md-6">
+    <div class="card border-warning">
+      <div class="card-header fw-bold text-warning">Restore from Backup</div>
+      <div class="card-body">
+        <div class="alert alert-warning py-2 small mb-3">
+          <strong>Warning:</strong> Restoring will replace ALL current data with the backup. A pre-restore backup is automatically saved.
+        </div>
+        <form method="POST" action="{% url 'profiles:restore_database' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <input type="file" name="backup_file" class="form-control form-control-sm" accept=".sqlite3" required>
+            <small class="text-muted">Upload a .sqlite3 backup file.</small>
+          </div>
+          <button type="submit" class="btn btn-warning btn-sm"
+                  onclick="return confirm('Are you sure? This will REPLACE all current data with the backup.\n\nA pre-restore backup will be saved automatically.');">
+            Restore Database
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pre-restore backups -->
+{% if backups %}
+<div class="card mt-4">
+  <div class="card-header fw-bold">Pre-restore Backups (auto-saved)</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>File</th>
+          <th>Size</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in backups %}
+        <tr>
+          <td class="small">{{ b.name }}</td>
+          <td class="small">{{ b.size }}</td>
+          <td class="small">{{ b.date|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
