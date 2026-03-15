@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -142,6 +143,45 @@ class ProfileNote(models.Model):
 
     def __str__(self):
         return f"{self.profile.display_id} — {self.text[:50]}"
+
+
+class Interaction(models.Model):
+    TYPE_CHOICES = [
+        ("phone_call", "Phone Call"),
+        ("whatsapp", "WhatsApp Chat"),
+        ("walkin", "Walk-in"),
+        ("email", "Email"),
+        ("other", "Other"),
+    ]
+
+    OUTCOME_CHOICES = [
+        ("interested", "Interested"),
+        ("not_interested", "Not Interested"),
+        ("callback", "Call Back Later"),
+        ("docs_pending", "Documents Pending"),
+        ("shortlisted", "Shortlisted Match"),
+        ("info_gathered", "Info Gathered"),
+        ("no_answer", "No Answer"),
+        ("other", "Other"),
+    ]
+
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="interactions")
+    interaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="phone_call")
+    outcome = models.CharField(max_length=20, choices=OUTCOME_CHOICES, default="info_gathered")
+    summary = models.TextField(help_text="Key points from the conversation")
+    transcript = models.TextField(blank=True, default="", help_text="Full transcript (auto-generated from audio)")
+    audio_file = models.FileField(upload_to="call_recordings/", blank=True, null=True)
+    follow_up_date = models.DateField(blank=True, null=True)
+    logged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.profile.display_id} — {self.get_interaction_type_display()} — {self.created_at:%d %b %Y %H:%M}"
 
 
 class GenerationLog(models.Model):

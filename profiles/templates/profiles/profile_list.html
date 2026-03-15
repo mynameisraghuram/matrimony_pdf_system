@@ -7,6 +7,7 @@
   <h2>All Profiles <span class="badge bg-secondary">{{ page_obj.paginator.count }}</span></h2>
   <div class="d-flex gap-2">
     <a href="{% url 'profiles:add_profile' %}" class="btn btn-primary">+ Add Profile</a>
+    <a href="{% url 'profiles:import_profiles' %}" class="btn btn-outline-primary">Import CSV/Excel</a>
     <a href="{% url 'profiles:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary">
       Export Excel
     </a>
@@ -70,6 +71,22 @@
       </div>
     </div>
   </div>
+  {% if stats.today_followups or stats.overdue_followups %}
+  <div class="col">
+    <a href="{% url 'profiles:follow_ups' %}" class="text-decoration-none">
+      <div class="card text-center border-0 {% if stats.overdue_followups %}bg-danger bg-opacity-10 border-danger{% else %}bg-light{% endif %}">
+        <div class="card-body py-2">
+          <div class="fs-4 fw-bold {% if stats.overdue_followups %}text-danger{% else %}text-info{% endif %}">
+            {% if stats.overdue_followups %}{{ stats.overdue_followups }}{% else %}{{ stats.today_followups }}{% endif %}
+          </div>
+          <small class="{% if stats.overdue_followups %}text-danger{% else %}text-muted{% endif %}">
+            {% if stats.overdue_followups %}Overdue Follow-ups{% else %}Follow-ups Today{% endif %}
+          </small>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Dashboard Charts -->
@@ -222,6 +239,10 @@
         <span class="text-muted small ms-2" id="selectedCount"></span>
       </div>
       <div class="d-flex gap-1">
+        <button type="button" class="btn btn-outline-info btn-sm" disabled id="btnCompare"
+                onclick="compareSelected();">
+          Compare
+        </button>
         <button type="submit" name="tier" value="standard" class="btn btn-outline-secondary btn-sm"
                 onclick="return confirmBulk(this, 'Standard');" disabled id="btnBulkStandard">
           Bulk Standard
@@ -276,6 +297,7 @@
               Status {% if sort == "status" %}{% if order == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
             </a>
           </th>
+          <th class="text-white small">Last Contacted</th>
           <th>
             <a href="?{% for k,v in request.GET.items %}{% if k != 'sort' and k != 'order' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}sort=updated_at&order={% if sort == 'updated_at' and order == 'asc' %}desc{% else %}asc{% endif %}"
                class="text-white text-decoration-none">
@@ -326,6 +348,13 @@
               <span class="badge bg-warning text-dark">Matched</span>
             {% elif profile.status == "on_hold" %}
               <span class="badge bg-danger">On Hold</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="small text-muted">
+            {% if profile.last_interaction %}
+              {{ profile.last_interaction|timesince }} ago
             {% else %}
               —
             {% endif %}
@@ -389,12 +418,14 @@
       const checkboxes = document.querySelectorAll('.profile-checkbox');
       const btnStd = document.getElementById('btnBulkStandard');
       const btnPrem = document.getElementById('btnBulkPremium');
+      const btnCompare = document.getElementById('btnCompare');
       const countLabel = document.getElementById('selectedCount');
 
       function updateState() {
         const checked = document.querySelectorAll('.profile-checkbox:checked').length;
         btnStd.disabled = checked === 0;
         btnPrem.disabled = checked === 0;
+        btnCompare.disabled = checked < 2;
         countLabel.textContent = checked > 0 ? `(${checked} selected)` : '';
         selectAll.checked = checked === checkboxes.length && checkboxes.length > 0;
         selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
@@ -407,6 +438,13 @@
 
       checkboxes.forEach(cb => cb.addEventListener('change', updateState));
     })();
+
+    function compareSelected() {
+      const checked = document.querySelectorAll('.profile-checkbox:checked');
+      if (checked.length < 2) return;
+      const ids = Array.from(checked).map(cb => 'ids=' + cb.value).join('&');
+      window.location.href = '{% url "profiles:compare_profiles" %}?' + ids;
+    }
 
     function confirmBulk(btn, tierLabel) {
       const count = document.querySelectorAll('.profile-checkbox:checked').length;

@@ -1,0 +1,82 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}Import Profiles{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Import Profiles</h2>
+  <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Profiles</a>
+</div>
+
+<div class="row">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header fw-bold">Upload File</div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Select CSV or Excel file</label>
+            <input type="file" name="file" class="form-control" accept=".csv,.xlsx,.xls" required>
+            <small class="text-muted">Supported formats: .csv, .xlsx</small>
+          </div>
+          <div class="alert alert-info py-2 small mb-3">
+            <strong>Note:</strong> Duplicate profiles (matching name or contact number) will be automatically skipped.
+          </div>
+          <button type="submit" class="btn text-white" style="background-color: #C42027;"
+                  onclick="this.disabled=true; this.innerText='Importing...'; showLoading('Importing profiles...'); this.form.submit();">
+            Import Profiles
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header fw-bold">Expected Column Headers</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 small">
+          <thead class="table-light">
+            <tr><th>Column Name</th><th>Maps To</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Full Name</td><td>full_name</td></tr>
+            <tr><td>First Name</td><td>first_name</td></tr>
+            <tr><td>Last Name</td><td>last_name</td></tr>
+            <tr><td>Looking For</td><td>looking_for</td></tr>
+            <tr><td>Date of Birth</td><td>date_of_birth</td></tr>
+            <tr><td>Height</td><td>height</td></tr>
+            <tr><td>Sub Caste</td><td>sub_caste</td></tr>
+            <tr><td>Star</td><td>star</td></tr>
+            <tr><td>Rasi</td><td>rasi</td></tr>
+            <tr><td>Gothram</td><td>gothram</td></tr>
+            <tr><td>Graduation</td><td>graduation</td></tr>
+            <tr><td>Designation</td><td>designation</td></tr>
+            <tr><td>Company / Company Name</td><td>company_name</td></tr>
+            <tr><td>Salary</td><td>salary</td></tr>
+            <tr><td>Job Location</td><td>job_location</td></tr>
+            <tr><td>Contact / Contact Number / Phone</td><td>contact_number</td></tr>
+            <tr><td>Email</td><td>email</td></tr>
+            <tr><td>Father Name</td><td>father_name</td></tr>
+            <tr><td>Mother Name</td><td>mother_name</td></tr>
+            <tr><td>Siblings</td><td>siblings</td></tr>
+            <tr><td>Status</td><td>status</td></tr>
+          </tbody>
+        </table>
+        <div class="p-2">
+          <small class="text-muted">Column headers are matched case-insensitively. Unrecognized columns are ignored.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header fw-bold">Quick Tip</div>
+      <div class="card-body small">
+        <p class="mb-2">Export your existing profiles first to see the exact format:</p>
+        <a href="{% url 'profiles:export_excel' %}" class="btn btn-outline-secondary btn-sm">Download Sample Excel</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

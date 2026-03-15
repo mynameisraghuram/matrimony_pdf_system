@@ -9,6 +9,8 @@ urlpatterns = [
     path("bulk-generate/", views.bulk_generate_pdf, name="bulk_generate_pdf"),
     path("export/", views.export_excel, name="export_excel"),
     path("activity-log/", views.activity_log, name="activity_log"),
+    path("import/", views.import_profiles, name="import_profiles"),
+    path("compare/", views.compare_profiles, name="compare_profiles"),
     path("add/", views.add_profile, name="add_profile"),
     path("<int:pk>/", views.profile_detail, name="profile_detail"),
     path("<int:pk>/edit/", views.edit_profile, name="edit_profile"),
@@ -21,4 +23,7 @@ urlpatterns = [
     path("<int:pk>/pdf/<int:pdf_id>/email/", views.email_pdf, name="email_pdf"),
     path("<int:pk>/add-note/", views.add_note, name="add_note"),
     path("<int:pk>/note/<int:note_id>/delete/", views.delete_note, name="delete_note"),
+    path("<int:pk>/add-interaction/", views.add_interaction, name="add_interaction"),
+    path("<int:pk>/interaction/<int:interaction_id>/delete/", views.delete_interaction, name="delete_interaction"),
+    path("follow-ups/", views.follow_ups, name="follow_ups"),
 ]

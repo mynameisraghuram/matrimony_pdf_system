@@ -21,7 +21,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
     path("profiles/", include("profiles.urls", namespace="profiles")),
+    path("", lambda request: __import__("django.shortcuts", fromlist=["redirect"]).redirect("profiles:profile_list")),
 ]
 
 if settings.DEBUG:

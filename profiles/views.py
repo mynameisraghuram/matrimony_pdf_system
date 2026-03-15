@@ -3,8 +3,9 @@ import os
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q, Subquery, OuterRef
 from django.utils import timezone
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,16 +13,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 import uuid
 
 from profiles.forms import ProfileForm
-from profiles.models import ActivityLog, GeneratedPDF, Profile, ProfileNote
+from profiles.models import ActivityLog, GeneratedPDF, Interaction, Profile, ProfileNote
 from profiles.utils.helpers import generate_profile_pdf
 from profiles.services.sync_service import sync_profiles_from_sheet
 
 
+@login_required
 def activity_log(request):
     logs = ActivityLog.objects.select_related("profile").all()[:100]
     return render(request, "profiles/activity_log.html", {"logs": logs})
 
 
+@login_required
 def add_profile(request):
     duplicates = None
     if request.method == "POST":
@@ -63,6 +66,7 @@ def add_profile(request):
     return render(request, "profiles/profile_form.html", {"form": form, "title": "Add New Profile"})
 
 
+@login_required
 def edit_profile(request, pk):
     profile = get_object_or_404(Profile, pk=pk)
     if request.method == "POST":
@@ -83,6 +87,7 @@ def edit_profile(request, pk):
     })
 
 
+@login_required
 def delete_profile(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -98,6 +103,7 @@ def delete_profile(request, pk):
     return redirect("profiles:profile_list")
 
 
+@login_required
 def add_note(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -111,6 +117,7 @@ def add_note(request, pk):
     return redirect("profiles:profile_detail", pk=pk)
 
 
+@login_required
 def delete_note(request, pk, note_id):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -120,6 +127,7 @@ def delete_note(request, pk, note_id):
     return redirect("profiles:profile_detail", pk=pk)
 
 
+@login_required
 def profile_list(request):
     profiles = Profile.objects.all()
 
@@ -176,6 +184,11 @@ def profile_list(request):
         sort = ""
         profiles = profiles.order_by("-updated_at")
 
+    # Annotate with last interaction date
+    profiles = profiles.annotate(
+        last_interaction=Max("interactions__created_at"),
+    )
+
     # Pagination
     paginator = Paginator(profiles, 25)
     page_number = request.GET.get("page")
@@ -206,6 +219,11 @@ def profile_list(request):
     total_pdfs = GeneratedPDF.objects.count()
     week_ago = timezone.now() - timezone.timedelta(days=7)
     pdfs_this_week = GeneratedPDF.objects.filter(generated_at__gte=week_ago).count()
+    from datetime import date as _date
+    overdue_followups = Interaction.objects.filter(
+        follow_up_date__isnull=False, follow_up_date__lt=_date.today()
+    ).count()
+    today_followups = Interaction.objects.filter(follow_up_date=_date.today()).count()
 
     # Chart data — profiles by sub caste
     sub_caste_data = list(
@@ -243,6 +261,8 @@ def profile_list(request):
             "with_photo": with_photo,
             "total_pdfs": total_pdfs,
             "pdfs_this_week": pdfs_this_week,
+            "overdue_followups": overdue_followups,
+            "today_followups": today_followups,
         },
         "chart_looking_for": json.dumps({"Grooms": grooms, "Brides": brides}),
         "chart_sub_caste": json.dumps(
@@ -255,6 +275,7 @@ def profile_list(request):
     return render(request, "profiles/profile_list.html", context)
 
 
+@login_required
 def sync_sheet(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -283,16 +304,24 @@ def sync_sheet(request):
     return redirect("profiles:profile_list")
 
 
+@login_required
 def profile_detail(request, pk):
     profile = get_object_or_404(Profile, pk=pk)
     pdfs = profile.pdfs.all().order_by("-generated_at")
     recent_activity = profile.activities.all()[:10]
     notes = profile.notes.all()
+    interactions = profile.interactions.select_related("logged_by").all()[:20]
+    from datetime import date
     return render(request, "profiles/profile_detail.html", {
-        "profile": profile, "pdfs": pdfs, "recent_activity": recent_activity, "notes": notes,
+        "profile": profile, "pdfs": pdfs, "recent_activity": recent_activity,
+        "notes": notes, "interactions": interactions,
+        "interaction_types": Interaction.TYPE_CHOICES,
+        "outcome_choices": Interaction.OUTCOME_CHOICES,
+        "today": date.today(),
     })
 
 
+@login_required
 def generate_pdf(request, pk, tier="premium"):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -325,6 +354,7 @@ def generate_pdf(request, pk, tier="premium"):
     return redirect("profiles:profile_detail", pk=pk)
 
 
+@login_required
 def bulk_generate_pdf(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -371,6 +401,7 @@ def bulk_generate_pdf(request):
     return redirect("profiles:profile_list")
 
 
+@login_required
 def upload_photo(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -427,6 +458,7 @@ def upload_photo(request, pk):
     return redirect("profiles:profile_detail", pk=pk)
 
 
+@login_required
 def delete_photo(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -446,6 +478,7 @@ def delete_photo(request, pk):
     return redirect("profiles:profile_detail", pk=pk)
 
 
+@login_required
 def preview_pdf(request, pk, pdf_id):
     pdf = get_object_or_404(GeneratedPDF, id=pdf_id, profile__pk=pk)
     abs_path = os.path.join(settings.BASE_DIR, pdf.file_path)
@@ -464,6 +497,7 @@ def preview_pdf(request, pk, pdf_id):
     )
 
 
+@login_required
 def download_pdf(request, pk, pdf_id):
     pdf = get_object_or_404(GeneratedPDF, id=pdf_id, profile__pk=pk)
     abs_path = os.path.join(settings.BASE_DIR, pdf.file_path)
@@ -482,6 +516,7 @@ def download_pdf(request, pk, pdf_id):
     )
 
 
+@login_required
 def export_excel(request):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
@@ -568,6 +603,7 @@ def export_excel(request):
     return response
 
 
+@login_required
 def email_pdf(request, pk, pdf_id):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -634,3 +670,366 @@ def email_pdf(request, pk, pdf_id):
         messages.error(request, f"Email failed: {str(e)}")
 
     return redirect("profiles:profile_detail", pk=pk)
+
+
+@login_required
+def import_profiles(request):
+    import csv
+    from io import TextIOWrapper
+    from openpyxl import load_workbook
+
+    # Column header -> model field mapping (case-insensitive)
+    HEADER_MAP = {
+        "first name": "first_name",
+        "last name": "last_name",
+        "full name": "full_name",
+        "looking for": "looking_for",
+        "marital status": "marital_status",
+        "date of birth": "date_of_birth",
+        "time of birth": "time_of_birth",
+        "place of birth": "place_of_birth",
+        "height": "height",
+        "star": "star",
+        "rasi": "rasi",
+        "sub caste": "sub_caste",
+        "gothram": "gothram",
+        "schooling": "schooling",
+        "graduation": "graduation",
+        "masters": "masters",
+        "designation": "designation",
+        "company": "company_name",
+        "company name": "company_name",
+        "salary": "salary",
+        "years of exp": "years_of_exp",
+        "experience": "years_of_exp",
+        "job location": "job_location",
+        "visa status": "visa_status",
+        "father name": "father_name",
+        "father occupation": "father_occupation",
+        "father native": "father_native",
+        "mother name": "mother_name",
+        "mother occupation": "mother_occupation",
+        "mother native": "mother_native",
+        "siblings": "siblings",
+        "parents staying": "parents_staying",
+        "actual property": "actual_property",
+        "shared property": "shared_property",
+        "expected property": "expected_property",
+        "preferred height": "preferred_height",
+        "age gap": "age_gap",
+        "preferred sub caste": "preferred_sub_caste",
+        "astrology": "astrology",
+        "looking country": "looking_country",
+        "looking state": "looking_state",
+        "education preference": "education_preference",
+        "career preferences": "career_preferences",
+        "special conditions": "special_conditions",
+        "contact": "contact_number",
+        "contact number": "contact_number",
+        "phone": "contact_number",
+        "second contact": "second_contact_number",
+        "second contact number": "second_contact_number",
+        "email": "email",
+        "status": "status",
+    }
+
+    if request.method == "POST" and request.FILES.get("file"):
+        uploaded = request.FILES["file"]
+        fname = uploaded.name.lower()
+
+        rows = []
+        headers = []
+
+        try:
+            if fname.endswith(".csv"):
+                text_file = TextIOWrapper(uploaded.file, encoding="utf-8-sig")
+                reader = csv.reader(text_file)
+                raw_headers = next(reader)
+                headers = [h.strip() for h in raw_headers]
+                for row in reader:
+                    if any(cell.strip() for cell in row):
+                        rows.append(row)
+            elif fname.endswith((".xlsx", ".xls")):
+                wb = load_workbook(uploaded, read_only=True, data_only=True)
+                ws = wb.active
+                all_rows = list(ws.iter_rows(values_only=True))
+                if not all_rows:
+                    messages.error(request, "The file appears to be empty.")
+                    return redirect("profiles:import_profiles")
+                headers = [str(h).strip() if h else "" for h in all_rows[0]]
+                for row in all_rows[1:]:
+                    str_row = [str(cell).strip() if cell is not None else "" for cell in row]
+                    if any(str_row):
+                        rows.append(str_row)
+                wb.close()
+            else:
+                messages.error(request, "Unsupported file format. Please upload .csv or .xlsx files.")
+                return redirect("profiles:import_profiles")
+        except Exception as e:
+            messages.error(request, f"Error reading file: {e}")
+            return redirect("profiles:import_profiles")
+
+        if not rows:
+            messages.error(request, "No data rows found in the file.")
+            return redirect("profiles:import_profiles")
+
+        # Map headers to model fields
+        field_map = {}  # column index -> model field name
+        for idx, header in enumerate(headers):
+            key = header.lower().strip()
+            if key in HEADER_MAP:
+                field_map[idx] = HEADER_MAP[key]
+
+        if not field_map:
+            messages.error(request, "No recognized column headers found. Expected headers like: Full Name, Contact Number, Sub Caste, etc.")
+            return redirect("profiles:import_profiles")
+
+        # Import rows
+        created = 0
+        skipped = 0
+        errors = []
+
+        for row_num, row in enumerate(rows, start=2):
+            data = {}
+            for col_idx, field_name in field_map.items():
+                if col_idx < len(row):
+                    val = row[col_idx].strip() if isinstance(row[col_idx], str) else str(row[col_idx]).strip()
+                    if val and val.lower() != "none":
+                        data[field_name] = val
+
+            if not data:
+                skipped += 1
+                continue
+
+            # Build full_name if not provided
+            if "full_name" not in data and ("first_name" in data or "last_name" in data):
+                parts = [data.get("first_name", ""), data.get("last_name", "")]
+                data["full_name"] = " ".join(p for p in parts if p)
+
+            # Check for duplicates by contact_number or full_name
+            dup_q = Q()
+            if data.get("contact_number"):
+                dup_q |= Q(contact_number=data["contact_number"])
+            if data.get("full_name") and data.get("full_name") != "":
+                dup_q |= Q(full_name__iexact=data["full_name"])
+
+            if dup_q and Profile.objects.filter(dup_q).exists():
+                skipped += 1
+                continue
+
+            try:
+                # Validate status
+                if "status" in data:
+                    valid_statuses = [s[0] for s in Profile.STATUS_CHOICES]
+                    if data["status"].lower() not in valid_statuses:
+                        data["status"] = "active"
+                    else:
+                        data["status"] = data["status"].lower()
+
+                profile = Profile(
+                    profile_id=f"IMPORT-{uuid.uuid4().hex[:8]}",
+                    **data,
+                )
+                profile.save()
+                created += 1
+            except Exception as e:
+                errors.append(f"Row {row_num}: {e}")
+
+        if created:
+            ActivityLog.objects.create(
+                action="profile_synced",
+                detail=f"Imported {created} profiles from {uploaded.name}",
+            )
+            messages.success(request, f"Successfully imported {created} profile(s).")
+        if skipped:
+            messages.info(request, f"Skipped {skipped} row(s) (duplicate or empty).")
+        if errors:
+            messages.warning(request, f"{len(errors)} error(s): {'; '.join(errors[:5])}")
+
+        return redirect("profiles:profile_list")
+
+    # GET - show upload form
+    return render(request, "profiles/import_profiles.html")
+
+
+@login_required
+def compare_profiles(request):
+    ids = request.GET.getlist("ids")
+    if len(ids) < 2:
+        messages.warning(request, "Please select at least 2 profiles to compare.")
+        return redirect("profiles:profile_list")
+    if len(ids) > 4:
+        ids = ids[:4]
+
+    profiles = Profile.objects.filter(pk__in=ids)
+    if profiles.count() < 2:
+        messages.error(request, "Selected profiles not found.")
+        return redirect("profiles:profile_list")
+
+    # Define comparison fields grouped by section
+    sections = [
+        ("Basic Details", [
+            ("Full Name", "full_name"),
+            ("Date of Birth", "date_of_birth"),
+            ("Time of Birth", "time_of_birth"),
+            ("Place of Birth", "place_of_birth"),
+            ("Height", "height"),
+            ("Looking For", "looking_for"),
+            ("Marital Status", "marital_status"),
+            ("Star", "star"),
+            ("Rasi", "rasi"),
+            ("Sub Caste", "sub_caste"),
+            ("Gothram", "gothram"),
+        ]),
+        ("Education & Career", [
+            ("Schooling", "schooling"),
+            ("Graduation", "graduation"),
+            ("Masters", "masters"),
+            ("Designation", "designation"),
+            ("Company", "company_name"),
+            ("Salary", "salary"),
+            ("Experience", "years_of_exp"),
+            ("Job Location", "job_location"),
+            ("Visa Status", "visa_status"),
+        ]),
+        ("Family Details", [
+            ("Father Name", "father_name"),
+            ("Father Occupation", "father_occupation"),
+            ("Father Native", "father_native"),
+            ("Mother Name", "mother_name"),
+            ("Mother Occupation", "mother_occupation"),
+            ("Mother Native", "mother_native"),
+            ("Siblings", "siblings"),
+            ("Parents Staying", "parents_staying"),
+        ]),
+        ("Property", [
+            ("Actual Property", "actual_property"),
+            ("Shared Property", "shared_property"),
+            ("Expected Property", "expected_property"),
+        ]),
+        ("Partner Preferences", [
+            ("Preferred Height", "preferred_height"),
+            ("Age Gap", "age_gap"),
+            ("Preferred Sub Caste", "preferred_sub_caste"),
+            ("Astrology", "astrology"),
+            ("Looking Country", "looking_country"),
+            ("Looking State", "looking_state"),
+            ("Education Preference", "education_preference"),
+            ("Career Preferences", "career_preferences"),
+            ("Special Conditions", "special_conditions"),
+        ]),
+        ("Contact", [
+            ("Email", "email"),
+            ("Contact Number", "contact_number"),
+            ("Second Contact", "second_contact_number"),
+        ]),
+    ]
+
+    return render(request, "profiles/compare_profiles.html", {
+        "profiles": profiles,
+        "sections": sections,
+    })
+
+
+@login_required
+def add_interaction(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    profile = get_object_or_404(Profile, pk=pk)
+
+    interaction_type = request.POST.get("interaction_type", "phone_call")
+    outcome = request.POST.get("outcome", "info_gathered")
+    summary = request.POST.get("summary", "").strip()
+    follow_up = request.POST.get("follow_up_date", "").strip()
+    audio = request.FILES.get("audio_file")
+
+    # If audio file uploaded, transcribe and summarize
+    transcript = ""
+    if audio:
+        allowed_ext = (".mp3", ".wav", ".m4a", ".ogg", ".webm", ".mp4")
+        if not audio.name.lower().endswith(allowed_ext):
+            messages.error(request, f"Unsupported audio format. Use: {', '.join(allowed_ext)}")
+            return redirect("profiles:profile_detail", pk=pk)
+
+        # Save audio temporarily for Whisper API
+        import tempfile
+        ext = os.path.splitext(audio.name)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+            for chunk in audio.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        try:
+            from profiles.services.call_transcriber import transcribe_audio, summarize_transcript
+            messages.info(request, "Transcribing audio... this may take a moment.")
+            transcript = transcribe_audio(tmp_path)
+            if not summary:
+                profile_name = profile.full_name or profile.display_id
+                summary = summarize_transcript(transcript, profile_name)
+        except Exception as e:
+            messages.error(request, f"Audio transcription failed: {e}")
+            if not summary:
+                summary = "(Audio uploaded but transcription failed)"
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    if not summary:
+        messages.warning(request, "Please provide a summary or upload an audio file.")
+        return redirect("profiles:profile_detail", pk=pk)
+
+    interaction = Interaction(
+        profile=profile,
+        interaction_type=interaction_type,
+        outcome=outcome,
+        summary=summary,
+        transcript=transcript,
+        logged_by=request.user,
+    )
+
+    if audio:
+        interaction.audio_file = audio
+
+    if follow_up:
+        try:
+            from datetime import date
+            interaction.follow_up_date = date.fromisoformat(follow_up)
+        except ValueError:
+            pass
+
+    interaction.save()
+    messages.success(request, f"Interaction logged: {interaction.get_interaction_type_display()}")
+    return redirect("profiles:profile_detail", pk=pk)
+
+
+@login_required
+def delete_interaction(request, pk, interaction_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    interaction = get_object_or_404(Interaction, id=interaction_id, profile__pk=pk)
+    interaction.delete()
+    messages.success(request, "Interaction deleted.")
+    return redirect("profiles:profile_detail", pk=pk)
+
+
+@login_required
+def follow_ups(request):
+    """Show all interactions with pending follow-up dates."""
+    from datetime import date
+    today = date.today()
+    upcoming = Interaction.objects.filter(
+        follow_up_date__isnull=False,
+        follow_up_date__gte=today,
+    ).select_related("profile", "logged_by").order_by("follow_up_date")[:50]
+
+    overdue = Interaction.objects.filter(
+        follow_up_date__isnull=False,
+        follow_up_date__lt=today,
+    ).select_related("profile", "logged_by").order_by("follow_up_date")[:50]
+
+    return render(request, "profiles/follow_ups.html", {
+        "upcoming": upcoming,
+        "overdue": overdue,
+        "today": today,
+    })

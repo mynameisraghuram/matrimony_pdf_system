@@ -1,0 +1,64 @@
+{% extends "profiles/base.html" %}
+{% load profile_tags %}
+
+{% block title %}Compare Profiles{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Compare Profiles</h2>
+  <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Profiles</a>
+</div>
+
+<!-- Profile headers with photos -->
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+  <thead>
+    <tr class="table-dark">
+      <th style="width: 180px;">Field</th>
+      {% for p in profiles %}
+      <th class="text-center">
+        {% if p.photo %}
+          <img src="{{ p.photo.url }}" alt="" class="rounded-circle mb-1" style="width: 50px; height: 50px; object-fit: cover;">
+          <br>
+        {% endif %}
+        <a href="{% url 'profiles:profile_detail' p.pk %}" class="text-white">{{ p.display_id }}</a>
+        <br>
+        <small>{{ p.full_name|default:"—" }}</small>
+        <br>
+        {% if p.status == "active" %}
+          <span class="badge bg-success">Active</span>
+        {% elif p.status == "inactive" %}
+          <span class="badge bg-secondary">Inactive</span>
+        {% elif p.status == "matched" %}
+          <span class="badge bg-warning text-dark">Matched</span>
+        {% elif p.status == "on_hold" %}
+          <span class="badge bg-danger">On Hold</span>
+        {% endif %}
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+
+  {% for section_name, fields in sections %}
+  <tbody>
+    <tr>
+      <td colspan="{{ profiles|length|add:1 }}" class="fw-bold bg-light" style="color: #C42027;">{{ section_name }}</td>
+    </tr>
+    {% for label, field_name in fields %}
+    <tr>
+      <td class="text-muted small fw-bold">{{ label }}</td>
+      {% for p in profiles %}
+        {% with val=p|get_field:field_name %}
+        <td class="small {% if val and val != '—' %}{% if forloop.parentloop.first %}{% else %}{% endif %}{% endif %}">
+          {{ val|default:"—" }}
+        </td>
+        {% endwith %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+  {% endfor %}
+</table>
+</div>
+
+{% endblock %}
